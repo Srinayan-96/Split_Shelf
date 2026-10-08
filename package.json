@@ -1,0 +1,14 @@
+{
+  "name": "split_shelf",
+  "version": "1.0.0",
+  "private": true,
+  "description": "split_shelf — shared household restock tracker",
+  "scripts": {
+    "dev": "concurrently \"npm run dev --prefix server\" \"npm run dev --prefix client\"",
+    "dev:server": "npm run dev --prefix server",
+    "dev:client": "npm run dev --prefix client"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2"
+  }
+}
