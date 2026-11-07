@@ -2,17 +2,37 @@ name: CI
 
 on:
   push:
-    branches: [main]
   pull_request:
 
 jobs:
-  ci:
+  test:
     runs-on: ubuntu-latest
+
+    # A real MongoDB for the integration tests.
+    services:
+      mongo:
+        image: mongo:7
+        ports:
+          - 27017:27017
+        options: >-
+          --health-cmd "mongosh --quiet --eval 'db.runCommand({ping:1})'"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    defaults:
+      run:
+        working-directory: server
+
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-      - run: npm install
-      - run: npm install --prefix server
-      - run: npm install --prefix client
+          cache: npm
+          cache-dependency-path: server/package-lock.json
+      - run: npm ci
+      - run: npm test
+        env:
+          TEST_MONGO_URI: mongodb://127.0.0.1:27017/split-shelf-test
+      - run: npm audit --omit=dev --audit-level=high
