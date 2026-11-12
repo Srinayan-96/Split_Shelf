@@ -5,7 +5,7 @@ import { formatDate, formatMoney, formatQty, runOutInfo, timeAgo, todayInputValu
 import { newKey } from '../utils/newKey';
 import PersonName from './PersonName';
 import MarkLowModal from './MarkLowModal';
-import { STANDARD_UNITS, cleanUnit } from '../utils/units';
+import { cleanUnit } from '../utils/units';
 
 export default function ItemDetailSlideOver({
   itemId,
@@ -31,17 +31,16 @@ export default function ItemDetailSlideOver({
   const [price, setPrice] = useState('');
   const [date, setDate] = useState(todayInputValue());
   const [note, setNote] = useState('');
-  const [unit, setUnit] = useState('');
   const [formError, setFormError] = useState(null);
   const [markLowOpen, setMarkLowOpen] = useState(false);
   const boughtKey = useRef(null);
 
-  // Sync unit when item data loads
+  // Default quantity to lastQuantity when item loads
   useEffect(() => {
-    if (data?.item?.unit) {
-      setUnit(cleanUnit(data.item.unit));
+    if (data?.item?.lastQuantity != null && data.item.lastQuantity > 0) {
+      setQuantity(String(data.item.lastQuantity));
     }
-  }, [data?.item?.unit]);
+  }, [data?.item?.lastQuantity]);
 
   const panelRef = useRef(null);
   const previouslyFocusedRef = useRef(null);
@@ -112,7 +111,6 @@ export default function ItemDetailSlideOver({
     setFormError(null);
 
     const details = { quantity: qty };
-    if (unit.trim()) details.unit = unit.trim();
     if (money.value !== null) details.pricePaise = money.value;
     if (note.trim()) details.note = note.trim();
     if (date && date !== todayInputValue()) details.boughtAt = dateInputToIso(date);
@@ -279,13 +277,13 @@ export default function ItemDetailSlideOver({
                   </div>
                 </div>
 
-                {isLow && item.lowUnitsLeft != null && (
+                {isLow && (
                   <div className="prop-row">
                     <span className="prop-label">
                       <span>Units left</span>
                     </span>
                     <div className="prop-value" style={{ color: 'var(--accent)', fontWeight: 600 }}>
-                      {item.lowUnitsLeft} {cleanUnit(item.unit)} left
+                      {item.lowUnitsLeft ?? 0} {cleanUnit(item.unit)} left
                       {item.lowNote && (
                         <div className="muted small" style={{ fontStyle: 'italic', marginTop: '2px' }}>
                           "{item.lowNote}"
@@ -381,36 +379,19 @@ export default function ItemDetailSlideOver({
                   {formError && <div className="alert">{formError}</div>}
 
                   <form onSubmit={handleSavePurchase} noValidate>
-                    <div className="panel-qty-unit-row">
-                      <div className="field">
-                        <label htmlFor="so-qty">Quantity</label>
-                        <input
-                          id="so-qty"
-                          type="number"
-                          min="1"
-                          step="any"
-                          value={quantity}
-                          onChange={(e) => setQuantity(e.target.value)}
-                          required
-                        />
-                      </div>
-                      <div className="field">
-                        <label htmlFor="so-unit">Unit</label>
-                        <select
-                          id="so-unit"
-                          value={unit}
-                          onChange={(e) => setUnit(e.target.value)}
-                        >
-                          {STANDARD_UNITS.map((u) => (
-                            <option key={u.value} value={u.value}>
-                              {u.label}
-                            </option>
-                          ))}
-                          {!STANDARD_UNITS.some((u) => u.value === unit) && unit && (
-                            <option value={unit}>{unit}</option>
-                          )}
-                        </select>
-                      </div>
+                    <div className="field">
+                      <label htmlFor="so-qty">
+                        Quantity <span className="muted">({cleanUnit(item?.unit || 'pcs')})</span>
+                      </label>
+                      <input
+                        id="so-qty"
+                        type="number"
+                        min="0.001"
+                        step="any"
+                        value={quantity}
+                        onChange={(e) => setQuantity(e.target.value)}
+                        required
+                      />
                     </div>
 
                     <div className="field">

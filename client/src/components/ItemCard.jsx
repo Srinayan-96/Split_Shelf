@@ -24,8 +24,8 @@ export default function ItemCard({ item, onLow, onOpenDetail }) {
       {/* Row 2: two pill chips */}
       <div className="item-card-pills">
         <span className="card-pill">
-          {isLow && item.lowUnitsLeft != null
-            ? `${item.lowUnitsLeft} ${cleanUnit(item.unit)} left`
+          {isLow
+            ? `${item.lowUnitsLeft ?? 0} ${cleanUnit(item.unit)} left`
             : `${item.currentStock ?? item.lastQuantity ?? 0} ${cleanUnit(item.unit)}`}
         </span>
         <span className="card-pill">Bought {item.purchaseCount ?? 0} times</span>

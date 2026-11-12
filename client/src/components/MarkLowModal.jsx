@@ -1,7 +1,7 @@
 import { useState } from 'react';
 
 export default function MarkLowModal({ item, onClose, onConfirm }) {
-  const [unitsLeft, setUnitsLeft] = useState(() => (item?.currentStock > 0 ? String(item.currentStock) : '1'));
+  const [unitsLeft, setUnitsLeft] = useState(() => (item?.currentStock != null ? String(item.currentStock) : '0'));
   const [note, setNote] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(null);

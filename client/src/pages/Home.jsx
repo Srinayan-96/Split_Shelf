@@ -247,8 +247,8 @@ export default function Home() {
 
                           <div className="list-col-unit">
                             <span>
-                              {isLow && item.lowUnitsLeft != null
-                                ? `${item.lowUnitsLeft} ${cleanUnit(item.unit)} left`
+                              {isLow
+                                ? `${item.lowUnitsLeft ?? 0} ${cleanUnit(item.unit)} left`
                                 : `${item.currentStock ?? item.lastQuantity ?? 0} ${cleanUnit(item.unit)}`}
                             </span>
                           </div>

@@ -198,3 +198,4 @@ export default function AdminLeaveModal({ household, currentUserId, onClose, onL
     </div>
   );
 }
+

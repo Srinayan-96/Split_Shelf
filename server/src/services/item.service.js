@@ -251,7 +251,6 @@ async function applyPurchaseToItem(household, itemId, log, unit) {
   }
 
   // If item unit was mistakenly set with leading digits (e.g. "3 packets"), clean it up
-  const currentItem = await Item.findById(itemId).select('unit');
   if (currentItem?.unit && /^\d+\s+\S+/.test(currentItem.unit) && !updateData.unit) {
     updateData.unit = currentItem.unit.replace(/^\d+\s*/, '');
   }
