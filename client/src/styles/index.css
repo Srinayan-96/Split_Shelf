@@ -1345,6 +1345,137 @@ textarea:focus {
 }
 .buy-label { display: none; }
 
+/* Person History & Tabs */
+.person-history-container {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  margin-top: 14px;
+}
+.person-summary-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 18px 22px;
+  box-shadow: var(--shadow-sm);
+  flex-wrap: wrap;
+}
+.person-summary-info {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.person-summary-avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  background: var(--surface-raised);
+  border: 1px solid var(--border);
+  display: grid;
+  place-items: center;
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--accent);
+}
+.person-summary-stats {
+  display: flex;
+  gap: 14px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.person-stat-chip {
+  background: var(--surface-raised);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 6px 12px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+}
+.product-tabs-bar {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding: 4px 2px 10px;
+  margin-bottom: 4px;
+  scrollbar-width: thin;
+}
+.tab-pill-btn {
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 8px 14px;
+  border-radius: 20px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  cursor: pointer;
+  white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.15s ease;
+  user-select: none;
+}
+.tab-pill-btn:hover {
+  background: var(--surface-raised);
+  border-color: var(--accent);
+}
+.tab-pill-btn.active {
+  background: var(--accent);
+  color: var(--on-accent);
+  border-color: var(--accent);
+  box-shadow: var(--shadow-sm);
+}
+.pill-badge {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 10px;
+  background: var(--surface-raised);
+  color: var(--text);
+}
+.tab-pill-btn.active .pill-badge {
+  background: var(--on-accent);
+  color: var(--accent);
+}
+.person-history-grid-header {
+  display: grid;
+  grid-template-columns: 1.4fr 1.8fr 1.2fr 1fr 2fr;
+  align-items: center;
+  gap: 12px;
+  padding: 0 18px;
+  min-height: 44px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  background: var(--surface-raised);
+  border-bottom: 1px solid var(--border);
+}
+.person-history-grid-row {
+  display: grid;
+  grid-template-columns: 1.4fr 1.8fr 1.2fr 1fr 2fr;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--border);
+  font-size: 14px;
+}
+.person-history-grid-row:last-child {
+  border-bottom: 0;
+}
+.person-note-text {
+  font-size: 13px;
+  color: var(--text-muted);
+  font-style: italic;
+}
+
 /* ==========================================================================
    6. ADMIN PAGE (pages/Admin.jsx)
    ========================================================================== */
