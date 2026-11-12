@@ -4,6 +4,5 @@ dist/
 *.log
 .DS_Store
 coverage/
-README2.md
-README3.md
+
 
