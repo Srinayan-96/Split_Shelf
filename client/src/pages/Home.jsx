@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import Sidebar from '../components/Sidebar';
 import MainHeader from '../components/MainHeader';
@@ -60,11 +60,20 @@ export default function Home() {
     setSearchParams({ item: itemId });
   }
 
-  function handleCloseDetail() {
+  const handleCloseDetail = useCallback(() => {
     setSelectedItemId(null);
     setOpenPurchaseForm(false);
     setSearchParams({});
-  }
+  }, [setSearchParams]);
+
+  const handleItemUpdated = useCallback((updated) => {
+    if (updated) replaceItem(updated);
+    reload({ silent: true });
+  }, [replaceItem, reload]);
+
+  const handleItemDeleted = useCallback(() => {
+    reload({ silent: true });
+  }, [reload]);
 
   // Mark Low handler
   function handleOpenMarkLow(item) {
@@ -305,11 +314,8 @@ export default function Home() {
             isAdmin={isAdmin}
             currentUserId={user.id}
             onClose={handleCloseDetail}
-            onItemUpdated={(updated) => {
-              if (updated) replaceItem(updated);
-              reload({ silent: true });
-            }}
-            onItemDeleted={() => reload({ silent: true })}
+            onItemUpdated={handleItemUpdated}
+            onItemDeleted={handleItemDeleted}
             initialOpenForm={openPurchaseForm}
             initialTab={detailTab}
           />

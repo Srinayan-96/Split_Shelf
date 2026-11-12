@@ -5,6 +5,31 @@ import { sortItems } from '../utils/format';
 
 const REFRESH_MIN_GAP_MS = 2000;
 
+function areItemsIdentical(prev, next) {
+  if (prev === next) return true;
+  if (!prev || !next || prev.length !== next.length) return false;
+  for (let i = 0; i < prev.length; i++) {
+    const p = prev[i];
+    const n = next[i];
+    if (
+      p.id !== n.id ||
+      p.status !== n.status ||
+      p.currentStock !== n.currentStock ||
+      p.lowUnitsLeft !== n.lowUnitsLeft ||
+      p.lowNote !== n.lowNote ||
+      p.name !== n.name ||
+      p.unit !== n.unit ||
+      p.purchaseCount !== n.purchaseCount ||
+      p.lastBoughtAt !== n.lastBoughtAt ||
+      p.lowMarkedAt !== n.lowMarkedAt ||
+      p.lastQuantity !== n.lastQuantity
+    ) {
+      return false;
+    }
+  }
+  return true;
+}
+
 export function useItems(householdId) {
   const [items, setItems] = useState([]);
   const [status, setStatus] = useState('loading'); // 'loading' | 'ready' | 'error'
@@ -26,7 +51,8 @@ export function useItems(householdId) {
       try {
         const list = await itemsApi.list(householdId);
         if (!alive.current || mine !== seq.current) return; // an older answer, ignore it
-        setItems(sortItems(list));
+        const sorted = sortItems(list);
+        setItems((prev) => (areItemsIdentical(prev, sorted) ? prev : sorted));
         setError(null);
         setStatus('ready');
         lastLoad.current = Date.now();

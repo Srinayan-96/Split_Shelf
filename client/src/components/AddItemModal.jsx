@@ -25,7 +25,12 @@ export default function AddItemModal({ onClose, onAdd }) {
   }
 
   return (
-    <div className="modal-backdrop" onClick={onClose}>
+    <div
+      className="modal-backdrop"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+    >
       <div
         className="dialog modal-card modal-card--add-item"
         onClick={(e) => e.stopPropagation()}

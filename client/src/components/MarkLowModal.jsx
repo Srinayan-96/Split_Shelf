@@ -31,7 +31,15 @@ export default function MarkLowModal({ item, onClose, onConfirm }) {
   const unitLabel = (item?.unit || 'pcs').replace(/^\d+\s*/, '') || 'pcs';
 
   return (
-    <div className="modal-backdrop" onClick={onClose} role="dialog" aria-modal="true" aria-labelledby="mark-low-title">
+    <div
+      className="modal-backdrop"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="mark-low-title"
+    >
       <div className="modal-card" style={{ maxWidth: '440px' }} onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
           <div className="modal-header-text">

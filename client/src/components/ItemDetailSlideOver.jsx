@@ -45,15 +45,20 @@ export default function ItemDetailSlideOver({
 
   const panelRef = useRef(null);
   const previouslyFocusedRef = useRef(null);
+  const onCloseRef = useRef(onClose);
 
-  // Store trigger element focus & trap escape
+  useEffect(() => {
+    onCloseRef.current = onClose;
+  }, [onClose]);
+
+  // Trap escape & store trigger element focus ONLY once on initial mount
   useEffect(() => {
     previouslyFocusedRef.current = document.activeElement;
     panelRef.current?.focus();
 
     function handleKeyDown(e) {
       if (e.key === 'Escape') {
-        onClose();
+        onCloseRef.current?.();
       }
     }
     document.addEventListener('keydown', handleKeyDown);
@@ -61,7 +66,7 @@ export default function ItemDetailSlideOver({
       document.removeEventListener('keydown', handleKeyDown);
       previouslyFocusedRef.current?.focus?.();
     };
-  }, [onClose]);
+  }, []);
 
   // Load item detail
   useEffect(() => {
@@ -188,7 +193,12 @@ export default function ItemDetailSlideOver({
   const notesList = history.filter((h) => Boolean(h.note?.trim()));
 
   return (
-    <div className="slide-over-backdrop" onClick={onClose}>
+    <div
+      className="slide-over-backdrop"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+    >
       <aside
         className="slide-over-panel"
         ref={panelRef}
