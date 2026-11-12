@@ -14,7 +14,7 @@ export default function Home() {
   const { user } = useAuth();
   const confirm = useConfirm();
   const { household, leave, regenerateCode } = useHousehold();
-  const { items, status, error: itemsError, reload, addItem, markLow, markBought } = useItems(household.id);
+  const { items, status, error: itemsError, reload, addItem, markLow, markBought, deleteItem } = useItems(household.id);
 
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(null);
@@ -133,7 +133,14 @@ export default function Home() {
         {status === 'ready' && items.length > 0 && (
           <div className="shelf-grid">
             {items.map((item) => (
-              <ItemCard key={item.id} item={item} onLow={markLow} onBought={markBought} />
+              <ItemCard
+                key={item.id}
+                item={item}
+                onLow={markLow}
+                onBought={markBought}
+                onDelete={deleteItem}
+                isAdmin={isAdmin}
+              />
             ))}
           </div>
         )}

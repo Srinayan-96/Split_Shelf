@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import PurchaseForm from './PurchaseForm';
 import RecentBuys from './RecentBuys';
 import { useAuth } from '../hooks/useAuth';
+import { useConfirm } from '../hooks/useConfirm';
 import { parseApiError } from '../api/client';
 import { timeAgo, runOutInfo } from '../utils/format';
 import { newKey } from '../utils/newKey';
@@ -40,9 +41,10 @@ function errorText(err) {
   return Object.values(parsed.fields)[0] || parsed.message;
 }
 
-export default function ItemCard({ item, onLow, onBought }) {
+export default function ItemCard({ item, onLow, onBought, onDelete, isAdmin }) {
   const { user } = useAuth();
-  const [busy, setBusy] = useState(null); // null | 'low' | 'bought'
+  const confirm = useConfirm();
+  const [busy, setBusy] = useState(null); // null | 'low' | 'bought' | 'delete'
   const [message, setMessage] = useState(null); // { kind: 'error' | 'info', text }
   const [formOpen, setFormOpen] = useState(false);
   const [recentOpen, setRecentOpen] = useState(false);
@@ -176,6 +178,32 @@ export default function ItemCard({ item, onLow, onBought }) {
                 aria-expanded={recentOpen}>
           Notes &amp; recent buys
         </button>
+        {isAdmin && onDelete && (
+          <button
+            className="btn btn-danger btn-small item-delete-btn"
+            onClick={async () => {
+              if (busy) return;
+              const ok = await confirm({
+                title: 'Delete this item?',
+                message: `"${item.name}" and all its purchase history will be permanently deleted.`,
+                confirmLabel: 'Delete item',
+                danger: true,
+              });
+              if (!ok) return;
+              setBusy('delete');
+              try {
+                await onDelete(item.id);
+              } catch (err) {
+                setMessage({ kind: 'error', text: errorText(err) });
+                setBusy(null);
+              }
+            }}
+            disabled={Boolean(busy)}
+            title="Delete this item"
+          >
+            {busy === 'delete' ? 'Deleting…' : 'Delete'}
+          </button>
+        )}
       </div>
 
       <Collapse open={recentOpen}>
