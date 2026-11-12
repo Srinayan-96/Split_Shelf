@@ -242,3 +242,4 @@ export default function Sidebar({ itemsCount, onAddItem, isDrawerOpen, onCloseDr
     </>
   );
 }
+

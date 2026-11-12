@@ -10,7 +10,7 @@
     <script>
       try {
         var saved = localStorage.getItem('splitshelf_theme');
-        var theme = saved || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+        var theme = saved || 'dark';
         document.documentElement.dataset.theme = theme;
       } catch (e) {}
     </script>

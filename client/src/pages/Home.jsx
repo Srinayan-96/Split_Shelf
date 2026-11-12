@@ -9,6 +9,7 @@ import { useAuth } from '../hooks/useAuth';
 import { useHousehold } from '../hooks/useHousehold';
 import { useItems } from '../hooks/useItems';
 import { parseApiError } from '../api/client';
+import { timeAgo } from '../utils/format';
 
 export default function Home() {
   const { user } = useAuth();
@@ -37,6 +38,15 @@ export default function Home() {
       else stock.push(item);
     });
     return { lowItems: low, inStockItems: stock };
+  }, [items]);
+
+  // Order items with Running low first for List view
+  const sortedItems = useMemo(() => {
+    return [...items].sort((a, b) => {
+      if (a.status === 'low' && b.status !== 'low') return -1;
+      if (a.status !== 'low' && b.status === 'low') return 1;
+      return (a.name || '').localeCompare(b.name || '');
+    });
   }, [items]);
 
   // Open detail panel helper
@@ -131,107 +141,145 @@ export default function Home() {
 
         {status === 'loading' && <ShelfSkeleton />}
 
-        {/* D. BOARD VIEW */}
+        {/* D. DYNAMIC BOARD VIEW */}
         {status === 'ready' && activeTab === 'board' && (
-          <div className="board-container">
-            {/* Column 1: Running Low */}
-            <div className="board-column">
-              <div className="board-column-header">
-                <span className="column-title">Running low</span>
-                <span className="count-pill-accent">{lowItems.length}</span>
-              </div>
-
-              <div className="column-cards-list">
-                {lowItems.length === 0 ? (
-                  <div className="dashed-empty-note">
-                    Nothing is running low. Tap Running low on an item to flag it for everyone.
-                  </div>
-                ) : (
-                  lowItems.map((item) => (
+          <div className="board">
+            {/* A. RUNNING LOW section (render only when at least one item is low) */}
+            {lowItems.length > 0 && (
+              <section className="board-section board-section--low" aria-label="Running low items">
+                <div className="board-section-header">
+                  <h3 className="section-title">Running low</h3>
+                  <span className="count-pill-accent">{lowItems.length}</span>
+                </div>
+                <div className="low-cards-grid">
+                  {lowItems.map((item) => (
                     <ItemCard
                       key={item.id}
                       item={item}
                       onLow={handleMarkLow}
                       onOpenDetail={handleOpenDetail}
                     />
-                  ))
-                )}
-              </div>
-            </div>
+                  ))}
+                </div>
+              </section>
+            )}
 
-            {/* Column 2: In Stock */}
-            <div className="board-column">
-              <div className="board-column-header">
-                <span className="column-title">In stock</span>
+            {/* B. IN STOCK section (always rendered) */}
+            <section className="board-section board-section--stock" aria-label="In stock items">
+              <div className="board-section-header">
+                <h3 className="section-title">In stock</h3>
                 <span className="count-pill">{inStockItems.length}</span>
               </div>
-
-              <div className="column-cards-list">
-                {inStockItems.length === 0 ? (
-                  <div className="dashed-empty-note">
-                    All items are either running low or nothing has been added yet.
-                  </div>
-                ) : (
-                  inStockItems.map((item) => (
+              {inStockItems.length === 0 ? (
+                <div className="dashed-empty-note">
+                  {items.length === 0
+                    ? 'Nothing on the shelf yet. Click "+ Add item" in the sidebar to add products.'
+                    : 'All items are currently running low.'}
+                </div>
+              ) : (
+                <div className={`in-stock-grid ${lowItems.length === 0 ? 'in-stock-grid--full' : ''}`}>
+                  {inStockItems.map((item) => (
                     <ItemCard
                       key={item.id}
                       item={item}
                       onLow={handleMarkLow}
                       onOpenDetail={handleOpenDetail}
                     />
-                  ))
-                )}
-              </div>
-            </div>
+                  ))}
+                </div>
+              )}
+            </section>
           </div>
         )}
 
-        {/* LIST VIEW (Alternative representation) */}
+        {/* 4. REAL GRID LIST TAB */}
         {status === 'ready' && activeTab === 'list' && (
-          <div className="panel list-table-card">
+          <div className="list-table-card">
             {items.length === 0 ? (
-              <div className="empty">
-                <p><strong>Nothing on the shelf yet.</strong></p>
-                <p className="muted">Click "+ Add item" in the sidebar to add products.</p>
+              <div className="dashed-empty-note" style={{ margin: '20px' }}>
+                Nothing on the shelf yet. Click "+ Add item" in the sidebar to add products.
               </div>
             ) : (
-              <div className="order-card" style={{ margin: 0 }}>
-                <div className="order-head">
-                  <span>Product Name</span>
-                  <span>Unit</span>
-                  <span>Times Bought</span>
-                  <span>Status</span>
-                  <span>Action</span>
+              <div className="list-table-scroll">
+                <div className="list-grid-inner">
+                  {/* Header Row: 46px, background var(--surface-raised), 12px uppercase labels */}
+                  <div className="list-table-header" role="row">
+                    <span>Product name</span>
+                    <span>Unit</span>
+                    <span>Times bought</span>
+                    <span>Status</span>
+                    <span>Last bought</span>
+                    <span>Action</span>
+                  </div>
+
+                  {/* Data Rows: min-height 64px, Running low items ordered first */}
+                  <div className="list-table-body" role="rowgroup">
+                    {sortedItems.map((item) => {
+                      const isLow = item.status === 'low';
+                      return (
+                        <div key={item.id} className="list-table-row" role="row">
+                          <div className="list-col-name">
+                            <button
+                              type="button"
+                              className="item-name-btn"
+                              onClick={() => handleOpenDetail(item.id, 'purchases')}
+                            >
+                              {item.name}
+                            </button>
+                          </div>
+
+                          <div className="list-col-unit">
+                            <span>{item.unit || '—'}</span>
+                          </div>
+
+                          <div className="list-col-bought">
+                            <span>{item.purchaseCount ?? 0}</span>
+                          </div>
+
+                          <div className="list-col-status">
+                            <span className={`badge ${isLow ? 'badge-accent' : ''}`}>
+                              {isLow ? 'Running low' : 'In stock'}
+                            </span>
+                          </div>
+
+                          <div className="list-col-last">
+                            {item.lastBoughtBy ? (
+                              <div className="person">
+                                <span className="avatar avatar-22">
+                                  {item.lastBoughtBy.name?.[0]?.toUpperCase() || '?'}
+                                </span>
+                                <span>
+                                  {item.lastBoughtBy.name} · {timeAgo(item.lastBoughtAt)}
+                                </span>
+                              </div>
+                            ) : (
+                              <span className="muted">Not yet</span>
+                            )}
+                          </div>
+
+                          <div className="list-col-action">
+                            <div className="list-row-actions">
+                              <button
+                                type="button"
+                                className="btn btn-secondary btn-compact"
+                                onClick={() => handleOpenDetail(item.id, 'purchases')}
+                              >
+                                View
+                              </button>
+                              <button
+                                type="button"
+                                className="btn btn-compact"
+                                onClick={() => handleOpenDetail(item.id, 'purchases', true)}
+                              >
+                                I bought this
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
                 </div>
-                <ul className="order-list">
-                  {items.map((item) => (
-                    <li key={item.id} className="order-row">
-                      <div className="order-item">
-                        <button
-                          className="item-name-btn"
-                          onClick={() => handleOpenDetail(item.id, 'purchases')}
-                        >
-                          {item.name}
-                        </button>
-                      </div>
-                      <div><span className="buy-label">Unit</span>{item.unit || '—'}</div>
-                      <div><span className="buy-label">Purchases</span>{item.purchaseCount ?? 0}</div>
-                      <div>
-                        <span className={`badge ${item.status === 'low' ? 'badge-accent' : ''}`}>
-                          {item.status === 'low' ? 'Running low' : 'In stock'}
-                        </span>
-                      </div>
-                      <div>
-                        <button
-                          className="btn btn-secondary btn-small"
-                          onClick={() => handleOpenDetail(item.id, 'purchases')}
-                        >
-                          View
-                        </button>
-                      </div>
-                    </li>
-                  ))}
-                </ul>
               </div>
             )}
           </div>

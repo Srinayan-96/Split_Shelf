@@ -38,3 +38,4 @@ export default function MainHeader({ title, subtitle, onOpenMenu }) {
     </header>
   );
 }
+

@@ -16,7 +16,7 @@ export default function ItemCard({ item, onLow, onOpenDetail }) {
           {item.name}
         </button>
         <span className={`badge ${isLow ? 'badge-accent' : ''}`}>
-          {isLow ? 'Running low' : 'OK'}
+          {isLow ? 'Running low' : 'In stock'}
         </span>
       </div>
 

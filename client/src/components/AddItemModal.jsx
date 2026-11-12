@@ -80,3 +80,4 @@ export default function AddItemModal({ onClose, onAdd }) {
     </div>
   );
 }
+
