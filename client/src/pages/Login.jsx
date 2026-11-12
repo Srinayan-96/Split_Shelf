@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import Field from '../components/Field';
+import ThemeToggle from '../components/ThemeToggle';
 import { useAuth } from '../hooks/useAuth';
 import { parseApiError } from '../api/client';
 
@@ -32,6 +33,7 @@ export default function Login() {
   return (
     <div className="auth-page">
       <form className="card" onSubmit={handleSubmit} noValidate>
+        <div className="auth-tools"><ThemeToggle /></div>
         <div className="brand">Split Shelf</div>
         <h1>Welcome back</h1>
         <p className="muted">Log in to see your shared shelf.</p>
