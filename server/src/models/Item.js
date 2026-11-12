@@ -14,6 +14,7 @@ const itemSchema = new mongoose.Schema(
 
     lastBoughtBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
     lastBoughtAt: { type: Date, default: null },
+    lastQuantity: { type: Number, default: null },
     nextTurn: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
 
     // Prediction results are CACHED here, recalculated each time a purchase is logged.

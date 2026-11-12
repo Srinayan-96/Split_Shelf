@@ -32,6 +32,7 @@ function toPublicItem(item, { names, memberIds }) {
     name: item.name,
     unit: item.unit,
     status: item.status,
+    lastQuantity: item.lastQuantity ?? null,
     lowMarkedBy: person(item.lowMarkedBy),
     lowMarkedAt: item.lowMarkedAt,
     lastBoughtBy: person(item.lastBoughtBy),
@@ -223,13 +224,20 @@ async function applyPurchaseToItem(household, itemId, log, unit) {
   };
 
   if (unit && typeof unit === 'string' && unit.trim()) {
-    updateData.unit = unit.trim();
+    updateData.unit = unit.trim().replace(/^\d+\s*/, '') || unit.trim();
   }
 
   if (latestLog) {
     updateData.lastBoughtBy = latestLog.boughtBy;
     updateData.lastBoughtAt = latestLog.boughtAt;
+    updateData.lastQuantity = latestLog.quantity;
     updateData.nextTurn = pickNextTurn(memberIds, latestLog.boughtBy);
+  }
+
+  // If item unit was mistakenly set with leading digits (e.g. "3 packets"), clean it up
+  const currentItem = await Item.findById(itemId).select('unit');
+  if (currentItem?.unit && /^\d+\s+\S+/.test(currentItem.unit) && !updateData.unit) {
+    updateData.unit = currentItem.unit.replace(/^\d+\s*/, '');
   }
 
   const updated = await Item.findByIdAndUpdate(

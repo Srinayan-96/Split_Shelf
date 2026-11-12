@@ -216,22 +216,23 @@ a:hover { text-decoration: underline; }
 /* Form inputs & placeholders */
 .field { display: flex; flex-direction: column; gap: 0.35rem; margin-bottom: 1rem; }
 .field label { font-size: 0.85rem; font-weight: 600; color: var(--text); }
-input[type="text"],
-input[type="email"],
-input[type="password"],
-input[type="search"],
-input[type="date"],
-input[type="number"],
+input,
 select,
 textarea {
   font: inherit;
+  width: 100%;
+  box-sizing: border-box;
   min-height: 44px;
-  padding: 0.6rem 0.8rem;
+  padding: 0.65rem 0.85rem;
   border-radius: var(--radius);
   border: 1px solid var(--border);
   background: var(--surface-raised);
   color: var(--text);
   transition: border-color 0.15s ease, background-color 0.15s ease;
+}
+textarea {
+  resize: vertical;
+  min-height: 64px;
 }
 input::placeholder,
 textarea::placeholder {
@@ -251,13 +252,17 @@ textarea:focus {
 
 /* Inputs inside raised containers use background var(--bg) with 1px var(--border) */
 .surface-raised input,
+.surface-raised select,
+.surface-raised textarea,
 .panel-purchase-container input,
 .panel-purchase-container select,
+.panel-purchase-container textarea,
 .item-card input,
 .dialog input,
 .invite-code-card input,
 .admin-inline-add-form input,
 .admin-inline-add-form select,
+.admin-inline-add-form textarea,
 .order-card input {
   background: var(--bg) !important;
   border: 1px solid var(--border) !important;
@@ -1079,6 +1084,21 @@ textarea:focus {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 12px;
+}
+.panel-form-actions,
+.dialog-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 18px;
+  padding-top: 14px;
+  border-top: 1px solid var(--border);
+}
+.panel-form-actions .btn,
+.dialog-actions .btn {
+  min-height: 44px;
+  padding: 0.65rem 1.25rem;
 }
 
 /* Tabs bar inside slide-over */

@@ -22,7 +22,11 @@ export default function ItemCard({ item, onLow, onOpenDetail }) {
 
       {/* Row 2: two pill chips */}
       <div className="item-card-pills">
-        <span className="card-pill">Unit {item.unit || '—'}</span>
+        <span className="card-pill">
+          {item.lastQuantity != null
+            ? `${item.lastQuantity} ${(item.unit || '').replace(/^\d+\s*/, '') || item.unit || 'units'}`
+            : `Unit ${item.unit || '—'}`}
+        </span>
         <span className="card-pill">Bought {item.purchaseCount ?? 0} times</span>
       </div>
 

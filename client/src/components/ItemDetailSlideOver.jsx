@@ -36,7 +36,7 @@ export default function ItemDetailSlideOver({
   // Sync unit when item data loads
   useEffect(() => {
     if (data?.item?.unit) {
-      setUnit(data.item.unit);
+      setUnit(data.item.unit.replace(/^\d+\s*/, '') || data.item.unit);
     }
   }, [data?.item?.unit]);
 
@@ -259,7 +259,11 @@ export default function ItemDetailSlideOver({
                     </svg>
                     <span>Unit</span>
                   </span>
-                  <div className="prop-value">{item.unit || '—'}</div>
+                  <div className="prop-value">
+                    {item.lastQuantity != null
+                      ? `${item.lastQuantity} ${(item.unit || '').replace(/^\d+\s*/, '') || item.unit}`
+                      : item.unit || '—'}
+                  </div>
                 </div>
 
                 <div className="prop-row">
@@ -376,6 +380,8 @@ export default function ItemDetailSlideOver({
                       <label htmlFor="so-price">Price (₹, optional)</label>
                       <input
                         id="so-price"
+                        type="text"
+                        inputMode="decimal"
                         placeholder="e.g. 120.50"
                         value={price}
                         onChange={(e) => setPrice(e.target.value)}
@@ -396,8 +402,9 @@ export default function ItemDetailSlideOver({
 
                     <div className="field">
                       <label htmlFor="so-note">Note (optional)</label>
-                      <input
+                      <textarea
                         id="so-note"
+                        rows="2"
                         placeholder="e.g. 3-pack from the corner shop"
                         value={note}
                         onChange={(e) => setNote(e.target.value)}
@@ -405,10 +412,10 @@ export default function ItemDetailSlideOver({
                       />
                     </div>
 
-                    <div className="dialog-actions" style={{ marginTop: '1rem' }}>
+                    <div className="panel-form-actions">
                       <button
                         type="button"
-                        className="btn btn-secondary btn-small"
+                        className="btn btn-secondary"
                         onClick={() => setFormOpen(false)}
                         disabled={busy}
                       >
@@ -416,7 +423,7 @@ export default function ItemDetailSlideOver({
                       </button>
                       <button
                         type="submit"
-                        className="btn btn-small"
+                        className="btn"
                         disabled={busy}
                       >
                         {busy ? 'Saving…' : 'Save purchase'}

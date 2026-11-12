@@ -229,7 +229,11 @@ export default function Home() {
                           </div>
 
                           <div className="list-col-unit">
-                            <span>{item.unit || '—'}</span>
+                            <span>
+                              {item.lastQuantity != null
+                                ? `${item.lastQuantity} ${(item.unit || '').replace(/^\d+\s*/, '') || item.unit || ''}`
+                                : item.unit || '—'}
+                            </span>
                           </div>
 
                           <div className="list-col-bought">
