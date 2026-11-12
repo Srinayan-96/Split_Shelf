@@ -43,21 +43,46 @@ export function useItems(householdId) {
 
   useEffect(() => { load(); }, [load]);
 
-  // See other people's changes when you come back to the tab, without polling.
+  // Keep live items in sync across browsers and roommates
   useEffect(() => {
-    const onVisible = () => {
-      if (document.visibilityState === 'visible' && Date.now() - lastLoad.current > REFRESH_MIN_GAP_MS) {
+    let timer;
+    const intervalMs = 5000;
+    const tick = () => {
+      if (document.visibilityState === 'visible') {
+        load({ silent: true });
+      }
+      timer = setTimeout(tick, intervalMs);
+    };
+    timer = setTimeout(tick, intervalMs);
+
+    const onSync = () => {
+      if (document.visibilityState === 'visible' && Date.now() - lastLoad.current > 1500) {
         load({ silent: true });
       }
     };
-    document.addEventListener('visibilitychange', onVisible);
-    return () => document.removeEventListener('visibilitychange', onVisible);
+    document.addEventListener('visibilitychange', onSync);
+    window.addEventListener('focus', onSync);
+
+    return () => {
+      clearTimeout(timer);
+      document.removeEventListener('visibilitychange', onSync);
+      window.removeEventListener('focus', onSync);
+    };
   }, [load]);
 
   // The server answers every action with the full updated item, so we just swap it in.
   const replaceItem = useCallback((updated) => {
-    seq.current += 1; // a list request still in flight is now older than this answer
-    setItems((prev) => sortItems(prev.map((i) => (i.id === updated.id ? updated : i))));
+    if (!updated) return;
+    seq.current += 1;
+    setItems((prev) => {
+      const exists = prev.some((i) => String(i.id) === String(updated.id));
+      if (exists) {
+        return sortItems(
+          prev.map((i) => (String(i.id) === String(updated.id) ? { ...i, ...updated } : i))
+        );
+      }
+      return sortItems([...prev, updated]);
+    });
   }, []);
 
   // If an admin deleted the item while we were looking at it, refresh the list.

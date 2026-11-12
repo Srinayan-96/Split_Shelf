@@ -120,14 +120,12 @@ export default function ItemDetailSlideOver({
         ...details,
       });
       boughtKey.current = null;
-      // Refresh detail data
-      const refreshed = await itemsApi.detail(householdId, itemId);
-      setData(refreshed);
       setFormOpen(false);
       setQuantity('1');
       setPrice('');
       setNote('');
       if (onItemUpdated) onItemUpdated(updatedItem);
+      if (onClose) onClose();
     } catch (err) {
       if (err.response) {
         boughtKey.current = null;
