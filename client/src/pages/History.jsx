@@ -234,51 +234,65 @@ export default function History() {
                   </div>
                 ) : (
                   <div className="history-feed-table">
-                    {/* Header Row */}
+                    {/* Header Row: S.No, Date, Name, Quantity, Unit, Bought by, Price */}
                     <div className="history-table-header">
-                      <span>Item</span>
+                      <span>S.No</span>
+                      <span>Date</span>
+                      <span>Name</span>
                       <span>Quantity</span>
                       <span>Unit</span>
                       <span>Bought by</span>
                       <span>Price</span>
                     </div>
 
-                    {/* Group by day (10 records per page) */}
-                    {groupByDay(currentRecords).map((group) => (
-                      <div key={group.label} className="day-purchase-group">
-                        <div className="day-separator-row">
-                          <span className="day-label-text">{group.label}</span>
-                        </div>
-                        {group.rows.map((p) => (
-                          <div key={p.id} className="history-table-row">
-                            <div className="col-item-details">
-                              <strong className="item-title-text">{p.item?.name || 'Deleted item'}</strong>
-                              {p.note && <span className="item-note-text">Note: “{p.note}”</span>}
-                            </div>
-                            <div className="col-cell">
-                              <span className="buy-label">Qty</span>
-                              {formatQty(p.quantity ?? 1)}
-                            </div>
-                            <div className="col-cell">
-                              <span className="buy-label">Unit</span>
-                              {cleanUnit(p.item?.unit)}
-                            </div>
-                            <div className="col-cell">
-                              <span className="buy-label">By</span>
-                              <PersonName
-                                id={p.boughtBy?.id}
-                                name={p.boughtBy?.name}
-                                href={`/history/people/${p.boughtBy?.id}`}
-                              />
-                            </div>
-                            <div className="col-cell col-price">
-                              <span className="buy-label">Price</span>
-                              <strong>{formatMoney(p.pricePaise)}</strong>
-                            </div>
+                    {/* Table Rows (10 records per page) */}
+                    {currentRecords.map((p, index) => {
+                      const serialNo = startIndex + index + 1;
+                      return (
+                        <div key={p.id} className="history-table-row">
+                          <div className="col-sno muted" style={{ fontWeight: 600 }}>
+                            {serialNo}
                           </div>
-                        ))}
-                      </div>
-                    ))}
+
+                          <div className="col-date" style={{ fontWeight: 500 }}>
+                            {formatDate(p.boughtAt)}
+                          </div>
+
+                          <div className="col-item-details">
+                            <strong className="item-title-text">{p.item?.name || 'Deleted item'}</strong>
+                            {p.note && <span className="item-note-text">Note: “{p.note}”</span>}
+                          </div>
+
+                          <div className="col-cell">
+                            <span className="buy-label">Qty</span>
+                            {formatQty(p.quantity ?? 1)}
+                          </div>
+
+                          <div className="col-cell">
+                            <span className="buy-label">Unit</span>
+                            {cleanUnit(p.item?.unit)}
+                          </div>
+
+                          <div className="col-cell">
+                            <span className="buy-label">By</span>
+                            <PersonName
+                              id={p.boughtBy?.id}
+                              name={p.boughtBy?.name}
+                              href={`/history/people/${p.boughtBy?.id}`}
+                            />
+                          </div>
+
+                          <div className="col-cell col-price">
+                            <span className="buy-label">Price</span>
+                            {p.pricePaise != null ? (
+                              <strong>{formatMoney(p.pricePaise)}</strong>
+                            ) : (
+                              <span className="muted">No price</span>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
 
                     {/* Pagination Footer (10 records per page) */}
                     <div className="history-pagination-bar">
