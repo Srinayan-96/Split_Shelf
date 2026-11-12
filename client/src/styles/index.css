@@ -1527,6 +1527,134 @@ textarea:focus {
   font-weight: 500;
 }
 
+/* ==========================================================================
+   TOPBAR & ONBOARDING PAGE
+   ========================================================================== */
+.topbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 28px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  box-shadow: var(--shadow-sm);
+  width: 100%;
+}
+.topbar-left {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+.topbar-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.onboarding-page-layout {
+  min-height: 100vh;
+  background: var(--bg);
+  display: flex;
+  flex-direction: column;
+}
+.onboarding-main {
+  width: 100%;
+  max-width: 860px;
+  margin: 48px auto;
+  padding: 0 24px;
+  box-sizing: border-box;
+}
+.onboarding-header {
+  text-align: center;
+  margin-bottom: 36px;
+}
+.onboarding-title {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 32px;
+  font-weight: 700;
+  margin: 0 0 8px 0;
+  color: var(--text);
+  line-height: 1.2;
+}
+.onboarding-subtitle {
+  font-size: 16px;
+  color: var(--text-muted);
+  margin: 0;
+}
+.onboard-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 24px;
+  align-items: stretch;
+}
+.onboard-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  padding: 32px 28px;
+  box-shadow: var(--shadow-panel);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 20px;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.onboard-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.55);
+}
+.onboard-card-title {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 22px;
+  font-weight: 700;
+  margin: 0 0 8px 0;
+  color: var(--text);
+}
+.onboard-card-desc {
+  font-size: 14px;
+  color: var(--text-muted);
+  margin: 0 0 20px 0;
+  line-height: 1.45;
+}
+.onboard-card .field {
+  margin-bottom: 20px;
+}
+.onboard-card .field input {
+  background: var(--surface-raised);
+  border: 1px solid var(--border);
+  width: 100%;
+  min-height: 48px;
+  padding: 10px 14px;
+  border-radius: 10px;
+  font-size: 15px;
+  color: var(--text);
+}
+.onboard-card input[name="invite-code"] {
+  font-family: ui-monospace, SFMono-Regular, monospace;
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+}
+.onboard-submit-btn {
+  width: 100%;
+  min-height: 46px;
+  font-size: 15px;
+  font-weight: 600;
+}
+@media (max-width: 720px) {
+  .onboard-grid {
+    grid-template-columns: 1fr;
+  }
+  .onboarding-main {
+    margin: 24px auto;
+    padding: 0 16px;
+  }
+  .topbar {
+    padding: 12px 16px;
+  }
+}
+
 /* Modals & Dialogs */
 .modal-backdrop {
   position: fixed;

@@ -17,7 +17,15 @@ export default function TopBar({ showBell = false }) {
   return (
     <header className="topbar">
       <div className="topbar-left">
-        <span className="brand">Split Shelf</span>
+        <div className="brand-mark-group">
+          <span className="logo-4square" aria-hidden="true">
+            <span className="sq sq-accent" />
+            <span className="sq sq-text" />
+            <span className="sq sq-text" />
+            <span className="sq sq-accent" />
+          </span>
+          <span className="brand-text">Split Shelf</span>
+        </div>
         {showBell && (
           <nav className="nav" aria-label="Main">
             <NavLink to="/" end>Shelf</NavLink>
