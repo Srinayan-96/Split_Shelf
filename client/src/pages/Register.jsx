@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import Field from '../components/Field';
-import ThemeToggle from '../components/ThemeToggle';
 import { useAuth } from '../hooks/useAuth';
 import { parseApiError } from '../api/client';
 
@@ -32,7 +31,6 @@ export default function Register() {
   return (
     <div className="auth-page">
       <form className="card" onSubmit={handleSubmit} noValidate>
-        <div className="auth-tools"><ThemeToggle /></div>
         <div className="brand">Split Shelf</div>
         <h1>Create your account</h1>
         <p className="muted">Track what your household shares, not just what it spends.</p>
