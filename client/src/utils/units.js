@@ -14,3 +14,4 @@ export function cleanUnit(val) {
   if (!val) return 'pcs';
   return String(val).trim().replace(/^\d+\s*/, '') || 'pcs';
 }
+

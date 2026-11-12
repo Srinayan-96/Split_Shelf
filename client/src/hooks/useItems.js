@@ -3,7 +3,7 @@ import * as itemsApi from '../api/items';
 import { parseApiError } from '../api/client';
 import { sortItems } from '../utils/format';
 
-const REFRESH_MIN_GAP_MS = 5000;
+const REFRESH_MIN_GAP_MS = 2000;
 
 export function useItems(householdId) {
   const [items, setItems] = useState([]);
@@ -46,7 +46,7 @@ export function useItems(householdId) {
   // Keep live items in sync across browsers and roommates
   useEffect(() => {
     let timer;
-    const intervalMs = 5000;
+    const intervalMs = 2000;
     const tick = () => {
       if (document.visibilityState === 'visible') {
         load({ silent: true });
@@ -56,7 +56,7 @@ export function useItems(householdId) {
     timer = setTimeout(tick, intervalMs);
 
     const onSync = () => {
-      if (document.visibilityState === 'visible' && Date.now() - lastLoad.current > 1500) {
+      if (document.visibilityState === 'visible' && Date.now() - lastLoad.current > 1000) {
         load({ silent: true });
       }
     };
