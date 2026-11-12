@@ -216,7 +216,7 @@ a:hover { text-decoration: underline; }
 /* Form inputs & placeholders */
 .field { display: flex; flex-direction: column; gap: 0.35rem; margin-bottom: 1rem; }
 .field label { font-size: 0.85rem; font-weight: 600; color: var(--text); }
-input,
+input:not([type="checkbox"]):not([type="radio"]),
 select,
 textarea {
   font: inherit;
@@ -229,6 +229,22 @@ textarea {
   background: var(--surface-raised);
   color: var(--text);
   transition: border-color 0.15s ease, background-color 0.15s ease;
+}
+
+input[type="checkbox"],
+input[type="radio"] {
+  width: 18px !important;
+  min-width: 18px !important;
+  max-width: 18px !important;
+  height: 18px !important;
+  min-height: 18px !important;
+  max-height: 18px !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  accent-color: var(--accent);
+  cursor: pointer;
+  flex-shrink: 0;
+  vertical-align: middle;
 }
 textarea {
   resize: vertical;
@@ -1347,11 +1363,25 @@ textarea:focus {
 }
 .admin-inline-add-form {
   display: flex;
-  gap: 10px;
-  margin-top: 12px;
+  align-items: center;
+  gap: 12px;
+  margin-top: 14px;
 }
-.admin-inline-add-form input {
-  flex: 1;
+.admin-inline-add-form input[type="text"] {
+  flex: 1 1 200px;
+  min-width: 160px;
+  min-height: 44px;
+}
+.admin-inline-add-form select {
+  flex: 0 0 160px;
+  width: 160px;
+  min-width: 140px;
+  min-height: 44px;
+}
+.admin-inline-add-form button {
+  flex: 0 0 auto;
+  min-height: 44px;
+  white-space: nowrap;
 }
 .members-progress-track {
   height: 6px;
@@ -1369,10 +1399,12 @@ textarea:focus {
   justify-content: space-between;
   align-items: center;
   margin-bottom: 16px;
+  flex-wrap: wrap;
+  gap: 12px;
 }
 .admin-table-grid {
   display: grid;
-  grid-template-columns: 2fr 1fr 1fr 1.5fr;
+  grid-template-columns: 2.2fr 1fr 1fr 1.4fr 0.7fr;
   align-items: center;
   gap: 12px;
 }

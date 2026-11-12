@@ -7,7 +7,7 @@ import { useHousehold } from '../hooks/useHousehold';
 import { useItems } from '../hooks/useItems';
 import { useConfirm } from '../hooks/useConfirm';
 import PersonName from '../components/PersonName';
-import { STANDARD_UNITS } from '../utils/units';
+import { STANDARD_UNITS, cleanUnit } from '../utils/units';
 
 export default function Admin() {
   const { user } = useAuth();
@@ -90,6 +90,33 @@ export default function Admin() {
     }
   }
 
+  // Delete single product from row
+  async function handleDeleteSingle(item) {
+    if (busy || !item) return;
+    const ok = await confirm({
+      title: `Delete "${item.name}"?`,
+      message: `Permanently delete this product and all associated purchase history? This cannot be undone.`,
+      confirmLabel: 'Delete product',
+      danger: true,
+    });
+    if (!ok) return;
+
+    setBusy(true);
+    setActionError(null);
+    try {
+      await deleteItem(item.id);
+      setSelectedIds((prev) => {
+        const next = new Set(prev);
+        next.delete(item.id);
+        return next;
+      });
+    } catch (err) {
+      setActionError(err.response?.data?.message || err.message || 'Failed deleting item.');
+    } finally {
+      setBusy(false);
+    }
+  }
+
   // Filtered items by search
   const filteredItems = useMemo(() => {
     if (!searchQuery.trim()) return items;
@@ -143,7 +170,6 @@ export default function Admin() {
                   <select
                     value={unit}
                     onChange={(e) => setUnit(e.target.value)}
-                    style={{ minWidth: '130px' }}
                   >
                     {STANDARD_UNITS.map((u) => (
                       <option key={u.value} value={u.value}>
@@ -217,7 +243,7 @@ export default function Admin() {
               ) : (
                 <div className="order-card" style={{ margin: 0 }}>
                   <div className="order-head admin-table-grid">
-                    <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                       <input
                         type="checkbox"
                         checked={selectedIds.size === items.length && items.length > 0}
@@ -229,6 +255,7 @@ export default function Admin() {
                     <span>Unit</span>
                     <span>Times bought</span>
                     <span>Last restocked by</span>
+                    <span style={{ textAlign: 'right' }}>Action</span>
                   </div>
 
                   <ul className="order-list">
@@ -241,7 +268,7 @@ export default function Admin() {
                           key={item.id}
                           className={`order-row admin-table-grid ${isSelected ? 'row-selected' : ''}`}
                         >
-                          <div className="order-item" style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', gap: '10px' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                             <input
                               type="checkbox"
                               checked={isSelected}
@@ -260,7 +287,7 @@ export default function Admin() {
 
                           <div>
                             <span className="buy-label">Unit</span>
-                            {item.unit || '—'}
+                            {cleanUnit(item.unit)}
                           </div>
 
                           <div>
@@ -275,6 +302,18 @@ export default function Admin() {
                             ) : (
                               <span className="muted">Not yet</span>
                             )}
+                          </div>
+
+                          <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+                            <button
+                              type="button"
+                              className="btn btn-secondary btn-small"
+                              style={{ padding: '4px 10px', fontSize: '12px' }}
+                              onClick={() => handleDeleteSingle(item)}
+                              disabled={busy}
+                            >
+                              Delete
+                            </button>
                           </div>
                         </li>
                       );
