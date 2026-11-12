@@ -250,6 +250,34 @@ textarea:focus {
   min-width: 200px;
 }
 
+/* Password input wrapper with eye button */
+.password-input-wrapper {
+  position: relative;
+  width: 100%;
+  display: flex;
+  align-items: center;
+}
+.password-input-wrapper input {
+  padding-right: 44px !important;
+}
+.password-toggle-btn {
+  position: absolute;
+  right: 8px;
+  width: 32px;
+  height: 32px;
+  background: transparent;
+  border: 0;
+  color: var(--icon-muted);
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  border-radius: 6px;
+  transition: color 0.15s ease;
+}
+.password-toggle-btn:hover {
+  color: var(--accent);
+}
+
 /* Inputs inside raised containers use background var(--bg) with 1px var(--border) */
 .surface-raised input,
 .surface-raised select,

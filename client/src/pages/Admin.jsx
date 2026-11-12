@@ -7,6 +7,7 @@ import { useHousehold } from '../hooks/useHousehold';
 import { useItems } from '../hooks/useItems';
 import { useConfirm } from '../hooks/useConfirm';
 import PersonName from '../components/PersonName';
+import { STANDARD_UNITS } from '../utils/units';
 
 export default function Admin() {
   const { user } = useAuth();
@@ -22,7 +23,7 @@ export default function Admin() {
 
   // Form states for "Add new product" card
   const [name, setName] = useState('');
-  const [unit, setUnit] = useState('');
+  const [unit, setUnit] = useState('pcs');
   const [adding, setAdding] = useState(false);
 
   const me = household.members.find((m) => m.id === user.id);
@@ -139,13 +140,17 @@ export default function Admin() {
                     onChange={(e) => setName(e.target.value)}
                     required
                   />
-                  <input
-                    type="text"
-                    placeholder="Unit (rolls, kg)"
+                  <select
                     value={unit}
                     onChange={(e) => setUnit(e.target.value)}
-                    style={{ maxWidth: '140px' }}
-                  />
+                    style={{ minWidth: '130px' }}
+                  >
+                    {STANDARD_UNITS.map((u) => (
+                      <option key={u.value} value={u.value}>
+                        {u.label}
+                      </option>
+                    ))}
+                  </select>
                   <button
                     type="submit"
                     className="btn btn-small"

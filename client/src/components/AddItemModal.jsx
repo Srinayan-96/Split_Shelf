@@ -1,9 +1,10 @@
 import { useState } from 'react';
 import { parseApiError } from '../api/client';
+import { STANDARD_UNITS } from '../utils/units';
 
 export default function AddItemModal({ onClose, onAdd }) {
   const [name, setName] = useState('');
-  const [unit, setUnit] = useState('');
+  const [unit, setUnit] = useState('pcs');
   const [error, setError] = useState(null);
   const [submitting, setSubmitting] = useState(false);
 
@@ -65,14 +66,18 @@ export default function AddItemModal({ onClose, onAdd }) {
           </div>
 
           <div className="field">
-            <label htmlFor="modal-item-unit">Unit (optional)</label>
-            <input
+            <label htmlFor="modal-item-unit">Unit</label>
+            <select
               id="modal-item-unit"
-              placeholder="e.g. bottles, rolls, litres, kg"
               value={unit}
               onChange={(e) => setUnit(e.target.value)}
-              maxLength={20}
-            />
+            >
+              {STANDARD_UNITS.map((u) => (
+                <option key={u.value} value={u.value}>
+                  {u.label}
+                </option>
+              ))}
+            </select>
           </div>
 
           <div className="modal-actions">

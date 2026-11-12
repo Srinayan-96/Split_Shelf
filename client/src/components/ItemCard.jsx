@@ -1,4 +1,5 @@
 import { timeAgo } from '../utils/format';
+import { cleanUnit } from '../utils/units';
 import PersonName from './PersonName';
 
 export default function ItemCard({ item, onLow, onOpenDetail }) {
@@ -23,9 +24,9 @@ export default function ItemCard({ item, onLow, onOpenDetail }) {
       {/* Row 2: two pill chips */}
       <div className="item-card-pills">
         <span className="card-pill">
-          {item.lastQuantity != null
-            ? `${item.lastQuantity} ${(item.unit || '').replace(/^\d+\s*/, '') || item.unit || 'units'}`
-            : `Unit ${item.unit || '—'}`}
+          {isLow && item.lowUnitsLeft != null
+            ? `${item.lowUnitsLeft} ${cleanUnit(item.unit)} left`
+            : `${item.currentStock ?? item.lastQuantity ?? 0} ${cleanUnit(item.unit)}`}
         </span>
         <span className="card-pill">Bought {item.purchaseCount ?? 0} times</span>
       </div>
@@ -57,8 +58,15 @@ export default function ItemCard({ item, onLow, onOpenDetail }) {
       {/* Low items only: line "Marked low by..." */}
       {isLow && item.lowMarkedBy && (
         <div className="item-low-by-line">
-          Marked low by <PersonName id={item.lowMarkedBy.id} name={item.lowMarkedBy.name} />{' '}
-          <span className="muted small">· {timeAgo(item.lowMarkedAt)}</span>
+          <div>
+            Marked low by <PersonName id={item.lowMarkedBy.id} name={item.lowMarkedBy.name} />{' '}
+            <span className="muted small">· {timeAgo(item.lowMarkedAt)}</span>
+          </div>
+          {item.lowNote && (
+            <div className="muted small" style={{ fontStyle: 'italic', marginTop: '2px' }}>
+              "{item.lowNote}"
+            </div>
+          )}
         </div>
       )}
 

@@ -28,4 +28,9 @@ const boughtSchema = z.object({
   note: z.string().trim().max(200).optional(),
 });
 
-module.exports = { createItemSchema, boughtSchema };
+const markLowSchema = z.object({
+  unitsLeft: z.number().min(0).max(100000).optional(),
+  note: z.string().trim().max(200).optional(),
+}).optional();
+
+module.exports = { createItemSchema, boughtSchema, markLowSchema };

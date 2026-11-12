@@ -4,6 +4,8 @@ import { parseApiError } from '../api/client';
 import { formatDate, formatMoney, formatQty, runOutInfo, timeAgo, todayInputValue, dateInputToIso, rupeesToPaise } from '../utils/format';
 import { newKey } from '../utils/newKey';
 import PersonName from './PersonName';
+import MarkLowModal from './MarkLowModal';
+import { STANDARD_UNITS, cleanUnit } from '../utils/units';
 
 export default function ItemDetailSlideOver({
   itemId,
@@ -31,12 +33,13 @@ export default function ItemDetailSlideOver({
   const [note, setNote] = useState('');
   const [unit, setUnit] = useState('');
   const [formError, setFormError] = useState(null);
+  const [markLowOpen, setMarkLowOpen] = useState(false);
   const boughtKey = useRef(null);
 
   // Sync unit when item data loads
   useEffect(() => {
     if (data?.item?.unit) {
-      setUnit(data.item.unit.replace(/^\d+\s*/, '') || data.item.unit);
+      setUnit(cleanUnit(data.item.unit));
     }
   }, [data?.item?.unit]);
 
@@ -139,12 +142,16 @@ export default function ItemDetailSlideOver({
   }
 
   // Mark Low
-  async function handleMarkLow() {
+  function handleMarkLow() {
     if (busy || isLow) return;
+    setMarkLowOpen(true);
+  }
+
+  async function handleConfirmMarkLow(details) {
     setBusy(true);
     setActionMessage(null);
     try {
-      const { item: updatedItem } = await itemsApi.markLow(householdId, itemId);
+      const { item: updatedItem } = await itemsApi.markLow(householdId, itemId, details);
       setData((prev) => (prev ? { ...prev, item: updatedItem } : prev));
       if (onItemUpdated) onItemUpdated(updatedItem);
     } catch (err) {
@@ -255,14 +262,28 @@ export default function ItemDetailSlideOver({
                       <rect x="2" y="7" width="20" height="14" rx="2" ry="2" />
                       <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16" />
                     </svg>
-                    <span>Unit</span>
+                    <span>Total available</span>
                   </span>
                   <div className="prop-value">
-                    {item.lastQuantity != null
-                      ? `${item.lastQuantity} ${(item.unit || '').replace(/^\d+\s*/, '') || item.unit}`
-                      : item.unit || '—'}
+                    {item.currentStock ?? item.lastQuantity ?? 0} {cleanUnit(item.unit)}
                   </div>
                 </div>
+
+                {isLow && item.lowUnitsLeft != null && (
+                  <div className="prop-row">
+                    <span className="prop-label">
+                      <span>Units left</span>
+                    </span>
+                    <div className="prop-value" style={{ color: 'var(--accent)', fontWeight: 600 }}>
+                      {item.lowUnitsLeft} {cleanUnit(item.unit)} left
+                      {item.lowNote && (
+                        <div className="muted small" style={{ fontStyle: 'italic', marginTop: '2px' }}>
+                          "{item.lowNote}"
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
 
                 <div className="prop-row">
                   <span className="prop-label">
@@ -365,12 +386,20 @@ export default function ItemDetailSlideOver({
                       </div>
                       <div className="field">
                         <label htmlFor="so-unit">Unit</label>
-                        <input
+                        <select
                           id="so-unit"
-                          placeholder="e.g. pcs, litres, kg, rolls"
                           value={unit}
                           onChange={(e) => setUnit(e.target.value)}
-                        />
+                        >
+                          {STANDARD_UNITS.map((u) => (
+                            <option key={u.value} value={u.value}>
+                              {u.label}
+                            </option>
+                          ))}
+                          {!STANDARD_UNITS.some((u) => u.value === unit) && unit && (
+                            <option value={unit}>{unit}</option>
+                          )}
+                        </select>
                       </div>
                     </div>
 
@@ -581,6 +610,14 @@ export default function ItemDetailSlideOver({
           </div>
         )}
       </aside>
+
+      {markLowOpen && (
+        <MarkLowModal
+          item={item}
+          onClose={() => setMarkLowOpen(false)}
+          onConfirm={handleConfirmMarkLow}
+        />
+      )}
     </div>
   );
 }

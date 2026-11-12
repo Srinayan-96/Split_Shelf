@@ -9,6 +9,9 @@ const itemSchema = new mongoose.Schema(
     unit: { type: String, trim: true, maxlength: 20, default: 'pcs' },
 
     status: { type: String, enum: ['ok', 'low'], default: 'ok' },
+    currentStock: { type: Number, default: 0 },
+    lowUnitsLeft: { type: Number, default: null },
+    lowNote: { type: String, trim: true, maxlength: 200, default: null },
     lowMarkedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
     lowMarkedAt: { type: Date, default: null },
 

@@ -18,7 +18,7 @@ const detail = asyncHandler(async (req, res) => {
 });
 
 const low = asyncHandler(async (req, res) => {
-  const result = await service.markLow(req.household, req.params.itemId, req.userId);
+  const result = await service.markLow(req.household, req.params.itemId, req.userId, req.body);
   res.json({ success: true, ...result });
 });
 

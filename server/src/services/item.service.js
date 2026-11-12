@@ -32,6 +32,9 @@ function toPublicItem(item, { names, memberIds }) {
     name: item.name,
     unit: item.unit,
     status: item.status,
+    currentStock: item.currentStock ?? 0,
+    lowUnitsLeft: item.lowUnitsLeft ?? null,
+    lowNote: item.lowNote ?? null,
     lastQuantity: item.lastQuantity ?? null,
     lowMarkedBy: person(item.lowMarkedBy),
     lowMarkedAt: item.lowMarkedAt,
@@ -113,37 +116,43 @@ async function getItemDetail(household, itemId) {
 }
 
 // ---------- "RUNNING LOW" ----------
-async function markLow(household, itemId, userId) {
-  // Atomic: flips ok -> low ONLY if it is currently ok. If three roommates tap
-  // at once, exactly one request matches this filter. The others match nothing.
-  const updated = await Item.findOneAndUpdate(
-    { _id: itemId, household: household._id, status: 'ok' },
-    { $set: { status: 'low', lowMarkedBy: userId, lowMarkedAt: new Date() } },
-    { new: true }
-  );
-  const ctx = await loadContext(household);
+async function markLow(household, itemId, userId, { unitsLeft, note } = {}) {
+  const item = await Item.findOne({ _id: itemId, household: household._id });
+  if (!item) throw ApiError.notFound('Item not found');
 
-  if (updated) {
-    // Runs only for the ONE request that really flipped ok -> low.
-    // Alerts are best-effort: the status change already succeeded, so a failure
-    // here is logged but must not turn the user's tap into an error.
-    try {
-      await notifier.notifyItemLow({
-        household,
-        item: updated,
-        actorId: userId,
-        actorName: ctx.names.get(String(userId)) || 'Someone',
-      });
-    } catch (err) {
-      console.error('Failed to send low-item notifications', err);
-    }
-    return { item: toPublicItem(updated, ctx), changed: true };
+  const updateFields = {
+    status: 'low',
+    lowMarkedBy: userId,
+    lowMarkedAt: new Date(),
+  };
+
+  const parsedUnits = unitsLeft !== undefined && unitsLeft !== null && !isNaN(Number(unitsLeft))
+    ? Math.max(0, Number(unitsLeft))
+    : (item.currentStock > 0 ? item.currentStock : 1);
+
+  updateFields.lowUnitsLeft = parsedUnits;
+  updateFields.currentStock = parsedUnits;
+
+  if (note && typeof note === 'string' && note.trim()) {
+    updateFields.lowNote = note.trim();
+  } else {
+    updateFields.lowNote = null;
   }
 
-  // Nothing matched: either no such item, or it was already low. Tapping twice is not an error.
-  const existing = await Item.findOne({ _id: itemId, household: household._id });
-  if (!existing) throw ApiError.notFound('Item not found');
-  return { item: toPublicItem(existing, ctx), changed: false };
+  const updated = await Item.findByIdAndUpdate(itemId, { $set: updateFields }, { new: true });
+  const ctx = await loadContext(household);
+
+  try {
+    await notifier.notifyItemLow({
+      household,
+      item: updated,
+      actorId: userId,
+      actorName: ctx.names.get(String(userId)) || 'Someone',
+    });
+  } catch (err) {
+    console.error('Failed to send low-item notifications', err);
+  }
+  return { item: toPublicItem(updated, ctx), changed: true };
 }
 
 // ---------- "I BOUGHT THIS" ----------
@@ -199,17 +208,21 @@ async function markBought(
 }
 
 async function applyPurchaseToItem(household, itemId, log, unit) {
-  const [recent, purchaseCount, latestLog] = await Promise.all([
+  const [recent, purchaseCount, latestLog, currentItem] = await Promise.all([
     RestockLog.find({ item: itemId })
       .sort({ boughtAt: -1 })
       .limit(RECENT_PURCHASES_USED)
       .select('boughtAt'),
     RestockLog.countDocuments({ item: itemId }),
     RestockLog.findOne({ item: itemId }).sort({ boughtAt: -1 }),
+    Item.findById(itemId).select('unit currentStock'),
   ]);
   const { avgIntervalDays, predictedRunOutAt, usableGaps } = computePrediction(
     recent.map((l) => l.boughtAt)
   );
+
+  const prevStock = currentItem?.currentStock ?? 0;
+  const newStock = Math.max(0, prevStock + (log.quantity || 1));
 
   const memberIds = household.members.map((m) => m.user);
   const updateData = {
@@ -219,8 +232,11 @@ async function applyPurchaseToItem(household, itemId, log, unit) {
     purchaseCount,
     // When an item is bought, it is restocked and immediately moves back to "in stock"
     status: 'ok',
+    currentStock: newStock,
     lowMarkedBy: null,
     lowMarkedAt: null,
+    lowUnitsLeft: null,
+    lowNote: null,
   };
 
   if (unit && typeof unit === 'string' && unit.trim()) {

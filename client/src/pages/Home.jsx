@@ -5,6 +5,8 @@ import MainHeader from '../components/MainHeader';
 import ItemCard from '../components/ItemCard';
 import ShelfSkeleton from '../components/ShelfSkeleton';
 import ItemDetailSlideOver from '../components/ItemDetailSlideOver';
+import MarkLowModal from '../components/MarkLowModal';
+import { cleanUnit } from '../utils/units';
 import { useAuth } from '../hooks/useAuth';
 import { useHousehold } from '../hooks/useHousehold';
 import { useItems } from '../hooks/useItems';
@@ -25,6 +27,7 @@ export default function Home() {
   const [selectedItemId, setSelectedItemId] = useState(() => searchParams.get('item'));
   const [openPurchaseForm, setOpenPurchaseForm] = useState(false);
   const [detailTab, setDetailTab] = useState('purchases');
+  const [markingLowItem, setMarkingLowItem] = useState(null);
 
   const me = household.members.find((m) => m.id === user.id);
   const isAdmin = me?.role === 'admin';
@@ -64,9 +67,14 @@ export default function Home() {
   }
 
   // Mark Low handler
-  async function handleMarkLow(itemId) {
+  function handleOpenMarkLow(item) {
+    setMarkingLowItem(item);
+  }
+
+  async function handleConfirmMarkLow(details) {
+    if (!markingLowItem) return;
     try {
-      await markLow(itemId);
+      await markLow(markingLowItem.id, details);
     } catch (err) {
       setError(parseApiError(err).message);
     }
@@ -156,7 +164,7 @@ export default function Home() {
                     <ItemCard
                       key={item.id}
                       item={item}
-                      onLow={handleMarkLow}
+                      onLow={() => handleOpenMarkLow(item)}
                       onOpenDetail={handleOpenDetail}
                     />
                   ))}
@@ -182,7 +190,7 @@ export default function Home() {
                     <ItemCard
                       key={item.id}
                       item={item}
-                      onLow={handleMarkLow}
+                      onLow={() => handleOpenMarkLow(item)}
                       onOpenDetail={handleOpenDetail}
                     />
                   ))}
@@ -230,9 +238,9 @@ export default function Home() {
 
                           <div className="list-col-unit">
                             <span>
-                              {item.lastQuantity != null
-                                ? `${item.lastQuantity} ${(item.unit || '').replace(/^\d+\s*/, '') || item.unit || ''}`
-                                : item.unit || '—'}
+                              {isLow && item.lowUnitsLeft != null
+                                ? `${item.lowUnitsLeft} ${cleanUnit(item.unit)} left`
+                                : `${item.currentStock ?? item.lastQuantity ?? 0} ${cleanUnit(item.unit)}`}
                             </span>
                           </div>
 
@@ -304,6 +312,15 @@ export default function Home() {
             onItemDeleted={() => reload({ silent: true })}
             initialOpenForm={openPurchaseForm}
             initialTab={detailTab}
+          />
+        )}
+
+        {/* 5. MARK RUNNING LOW DIALOG */}
+        {markingLowItem && (
+          <MarkLowModal
+            item={markingLowItem}
+            onClose={() => setMarkingLowItem(null)}
+            onConfirm={handleConfirmMarkLow}
           />
         )}
       </main>

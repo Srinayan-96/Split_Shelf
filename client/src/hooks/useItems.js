@@ -104,10 +104,10 @@ export function useItems(householdId) {
   );
 
   const markLow = useCallback(
-    async (itemId) => {
-      const { item, changed } = await itemsApi.markLow(householdId, itemId).catch(resyncOn404);
+    async (itemId, details = {}) => {
+      const { item, changed } = await itemsApi.markLow(householdId, itemId, details).catch(resyncOn404);
       replaceItem(item);
-      return { changed };
+      return { item, changed };
     },
     [householdId, replaceItem, resyncOn404]
   );
