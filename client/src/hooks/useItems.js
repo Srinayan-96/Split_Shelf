@@ -149,5 +149,14 @@ export function useItems(householdId) {
     [householdId, replaceItem, resyncOn404]
   );
 
-  return { items, status, error, reload: load, addItem, markLow, markBought };
+  const deleteItem = useCallback(
+    async (itemId) => {
+      await itemsApi.remove(householdId, itemId);
+      seq.current += 1;
+      setItems((prev) => prev.filter((i) => String(i.id) !== String(itemId)));
+    },
+    [householdId]
+  );
+
+  return { items, status, error, reload: load, addItem, markLow, markBought, deleteItem, replaceItem };
 }

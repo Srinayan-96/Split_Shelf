@@ -83,6 +83,7 @@ export default function Admin() {
         await deleteItem(id);
       }
       setSelectedIds(new Set());
+      reload({ silent: true });
     } catch (err) {
       setActionError(err.response?.data?.message || err.message || 'Failed deleting some items.');
     } finally {
@@ -110,6 +111,7 @@ export default function Admin() {
         next.delete(item.id);
         return next;
       });
+      reload({ silent: true });
     } catch (err) {
       setActionError(err.response?.data?.message || err.message || 'Failed deleting item.');
     } finally {

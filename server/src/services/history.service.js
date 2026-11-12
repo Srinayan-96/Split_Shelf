@@ -15,11 +15,10 @@ async function itemsById(itemIds) {
 
 function toPurchase(log, names, items) {
   const item = items.get(String(log.item));
+  if (!item) return null;
   return {
     id: log._id,
-    item: item
-      ? { id: item._id, name: item.name, unit: item.unit }
-      : { id: log.item, name: 'Deleted item', unit: '' },
+    item: { id: item._id, name: item.name, unit: item.unit },
     boughtBy: { id: log.boughtBy, name: names.get(String(log.boughtBy)) || 'Former member' },
     boughtAt: log.boughtAt,
     quantity: log.quantity ?? 1,        // purchases made before quantities existed
@@ -54,7 +53,7 @@ async function getFeed(household, { limit, before }) {
   ]);
 
   return {
-    purchases: page.map((l) => toPurchase(l, ctx.names, items)),
+    purchases: page.map((l) => toPurchase(l, ctx.names, items)).filter(Boolean),
     nextCursor: hasMore ? encodeCursor(page[page.length - 1]) : null,
   };
 }
@@ -110,12 +109,11 @@ async function getPerson(household, userId) {
   const groups = new Map();
   logs.forEach((log) => {
     const key = String(log.item);
+    const item = items.get(key);
+    if (!item) return; // Skip purchases of deleted items
     if (!groups.has(key)) {
-      const item = items.get(key);
       groups.set(key, {
-        item: item
-          ? { id: item._id, name: item.name, unit: item.unit }
-          : { id: log.item, name: 'Deleted item', unit: '' },
+        item: { id: item._id, name: item.name, unit: item.unit },
         purchases: [],
       });
     }
