@@ -10,7 +10,7 @@ Empty placeholder files exist in the client. Do not open those. The real file is
 
 | Member | Owns | Can answer |
 | --- | --- | --- |
-| **Member 1 — Accounts and households** | Sign-in, token, route guards, create/join household, invite code, members, leave | “Where is the login form?” “Where is the password checked?” “Where is the invite code?” |
+| **Member 1 —  Accounts and households** | Sign-in, token, route guards, create/join household, invite code, members, leave | “Where is the login form?” “Where is the password checked?” “Where is the invite code?” |
 | **Member 2 — Shelf, money, and history** | Item cards, “I bought this”, price in paise, forecast, whose turn, item page, History | “Where is the purchase form?” “Why is money not a decimal?” “Where is the run-out date calculated?” |
 | **Member 3 — Page boot, alerts, database, scheduler** | How React mounts the page, the bell, MongoDB connection, the daily reminder, the GitHub schedule | “How does the front page render?” “Where does the app connect to the database?” “Where is the scheduler?” |
 
