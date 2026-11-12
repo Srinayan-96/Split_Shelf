@@ -7,6 +7,7 @@ import Home from './pages/Home';
 import ItemDetail from './pages/ItemDetail';
 import History from './pages/History';
 import PersonHistory from './pages/PersonHistory';
+import Admin from './pages/Admin';
 
 export default function App() {
   return (
@@ -22,6 +23,7 @@ export default function App() {
           <Route path="/items/:itemId" element={<ItemDetail />} />
           <Route path="/history" element={<History />} />
           <Route path="/history/people/:userId" element={<PersonHistory />} />
+          <Route path="/admin" element={<Admin />} />
         </Route>
       </Route>
 

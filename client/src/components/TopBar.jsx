@@ -1,5 +1,6 @@
 import { NavLink } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
+import { useHousehold } from '../hooks/useHousehold';
 import NotificationBell from './NotificationBell';
 import ThemeToggle from './ThemeToggle';
 import PersonName from './PersonName';
@@ -8,6 +9,11 @@ import PersonName from './PersonName';
 // need a household, and the NotificationProvider only exists there).
 export default function TopBar({ showBell = false }) {
   const { user, logout } = useAuth();
+  const { household } = useHousehold();
+
+  const me = household?.members?.find((m) => m.id === user.id);
+  const isAdmin = me?.role === 'admin';
+
   return (
     <header className="topbar">
       <div className="topbar-left">
@@ -16,6 +22,7 @@ export default function TopBar({ showBell = false }) {
           <nav className="nav" aria-label="Main">
             <NavLink to="/" end>Shelf</NavLink>
             <NavLink to="/history">History</NavLink>
+            {isAdmin && <NavLink to="/admin">Admin</NavLink>}
           </nav>
         )}
       </div>
