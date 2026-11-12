@@ -283,15 +283,15 @@ textarea:focus {
 /* Native dialog / modal */
 .dialog {
   border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 1.5rem;
-  background: var(--surface-raised);
+  border-radius: 18px;
+  padding: 28px;
+  background: var(--surface);
   color: var(--text);
   width: calc(100% - 2rem);
-  max-width: 440px;
-  box-shadow: var(--shadow);
+  max-width: 540px;
+  box-shadow: var(--shadow-modal);
 }
-.dialog::backdrop { background: rgba(0, 0, 0, 0.6); }
+.dialog::backdrop { background: rgba(10, 16, 19, 0.72); backdrop-filter: blur(4px); }
 
 /* Avatars */
 .person { display: inline-flex; align-items: center; gap: 0.45rem; }
@@ -1383,21 +1383,251 @@ textarea:focus {
 }
 .pill-delete-btn:hover { color: var(--accent-hover); text-decoration: underline; }
 
-/* Modals */
+/* ==========================================================================
+   7. AUTH PAGES (Login, Register) & ONBOARDING
+   ========================================================================== */
+.auth-page,
+.center-screen {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg);
+  padding: 24px 16px;
+}
+
+.card {
+  width: 100%;
+  max-width: 440px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  padding: 36px 32px;
+  box-shadow: var(--shadow-panel);
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+
+.card .auth-tools {
+  position: absolute;
+  top: 24px;
+  right: 24px;
+}
+
+.card .brand {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 8px;
+}
+
+.card h1 {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 26px;
+  font-weight: 700;
+  color: var(--text);
+  margin: 0 0 6px 0;
+  line-height: 1.2;
+}
+
+.card p.muted {
+  font-size: 14px;
+  color: var(--text-muted);
+  margin: 0 0 24px 0;
+  line-height: 1.45;
+}
+
+.card .field {
+  margin-bottom: 18px;
+}
+
+.card .field label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 6px;
+}
+
+.card .field input {
+  background: var(--surface-raised);
+  border: 1px solid var(--border);
+  width: 100%;
+  min-height: 46px;
+  padding: 10px 14px;
+  border-radius: 10px;
+  font-size: 14px;
+  color: var(--text);
+  transition: border-color 0.15s ease;
+}
+
+.card .field input:focus {
+  border-color: var(--accent);
+}
+
+.card button.btn[type="submit"] {
+  width: 100%;
+  min-height: 46px;
+  margin-top: 10px;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.switch {
+  text-align: center;
+  margin-top: 22px;
+  margin-bottom: 0;
+  font-size: 14px;
+  color: var(--text-muted);
+}
+
+.switch a {
+  color: var(--accent);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.switch a:hover {
+  text-decoration: underline;
+  color: var(--accent-hover);
+}
+
+.error-text {
+  font-size: 12px;
+  color: var(--accent);
+  margin-top: 4px;
+  font-weight: 500;
+}
+
+/* Modals & Dialogs */
 .modal-backdrop {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.6);
-  display: grid;
-  place-items: center;
+  background: rgba(10, 16, 19, 0.72);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
   z-index: 120;
+  padding: 16px;
 }
+
 .drawer-backdrop {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.6);
+  background: rgba(10, 16, 19, 0.72);
   border: 0;
   z-index: 39;
+}
+
+.modal-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  padding: 28px;
+  width: 100%;
+  max-width: 540px;
+  box-shadow: var(--shadow-modal);
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+
+.modal-card--add-item {
+  max-width: 540px;
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 20px;
+  gap: 16px;
+}
+
+.modal-header-text {
+  flex: 1;
+}
+
+.modal-title {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 22px;
+  font-weight: 700;
+  margin: 0 0 6px 0;
+  color: var(--text);
+  line-height: 1.25;
+}
+
+.modal-subtitle {
+  font-size: 14px;
+  color: var(--text-muted);
+  margin: 0;
+  line-height: 1.45;
+}
+
+.modal-close-btn {
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--icon);
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  font-size: 14px;
+  flex-shrink: 0;
+  transition: all 0.15s ease;
+}
+
+.modal-close-btn:hover {
+  background: var(--surface-raised);
+  color: var(--accent);
+  border-color: var(--accent);
+}
+
+.modal-card .field {
+  margin-bottom: 18px;
+}
+
+.modal-card .field label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 6px;
+}
+
+.modal-card .field input {
+  background: var(--surface-raised);
+  border: 1px solid var(--border);
+  width: 100%;
+  min-height: 46px;
+  padding: 10px 14px;
+  border-radius: 10px;
+  font-size: 14px;
+  color: var(--text);
+  transition: border-color 0.15s ease;
+}
+
+.modal-card .field input:focus {
+  border-color: var(--accent);
+  outline: none;
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 24px;
+  padding-top: 18px;
+  border-top: 1px solid var(--border);
+}
+
+.modal-actions .btn {
+  min-width: 100px;
 }
 
 /* ==========================================================================

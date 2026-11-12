@@ -25,11 +25,28 @@ export default function AddItemModal({ onClose, onAdd }) {
 
   return (
     <div className="modal-backdrop" onClick={onClose}>
-      <div className="dialog modal-card" onClick={(e) => e.stopPropagation()}>
-        <h2>Add item to shelf</h2>
-        <p className="muted small" style={{ marginBottom: '1.25rem' }}>
-          Add a shared item that flatmates restock and consume together.
-        </p>
+      <div
+        className="dialog modal-card modal-card--add-item"
+        onClick={(e) => e.stopPropagation()}
+        role="dialog"
+        aria-labelledby="modal-add-item-title"
+      >
+        <div className="modal-header">
+          <div className="modal-header-text">
+            <h2 id="modal-add-item-title" className="modal-title">Add item to shelf</h2>
+            <p className="modal-subtitle">
+              Add a shared item that flatmates restock and consume together.
+            </p>
+          </div>
+          <button
+            type="button"
+            className="modal-close-btn"
+            onClick={onClose}
+            aria-label="Close dialog"
+          >
+            ✕
+          </button>
+        </div>
 
         {error && <div className="alert" role="alert">{error}</div>}
 
@@ -58,10 +75,10 @@ export default function AddItemModal({ onClose, onAdd }) {
             />
           </div>
 
-          <div className="dialog-actions">
+          <div className="modal-actions">
             <button
               type="button"
-              className="btn btn-secondary btn-small"
+              className="btn btn-secondary btn-compact"
               onClick={onClose}
               disabled={submitting}
             >
@@ -69,7 +86,7 @@ export default function AddItemModal({ onClose, onAdd }) {
             </button>
             <button
               type="submit"
-              className="btn btn-small"
+              className="btn btn-compact"
               disabled={submitting || !name.trim()}
             >
               {submitting ? 'Adding…' : 'Add product'}
