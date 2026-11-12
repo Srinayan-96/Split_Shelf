@@ -5,6 +5,7 @@ import { useHousehold } from '../hooks/useHousehold';
 import { useConfirm } from '../hooks/useConfirm';
 import PersonName from './PersonName';
 import AddItemModal from './AddItemModal';
+import AdminLeaveModal from './AdminLeaveModal';
 import * as itemsApi from '../api/items';
 
 export default function Sidebar({ itemsCount, onAddItem, isDrawerOpen, onCloseDrawer }) {
@@ -15,6 +16,7 @@ export default function Sidebar({ itemsCount, onAddItem, isDrawerOpen, onCloseDr
   const [copyState, setCopyState] = useState('idle');
   const [busy, setBusy] = useState(false);
   const [addModalOpen, setAddModalOpen] = useState(false);
+  const [adminLeaveModalOpen, setAdminLeaveModalOpen] = useState(false);
 
   const me = household?.members?.find((m) => String(m?.id) === String(user?.id));
   const isAdmin = me?.role === 'admin';
@@ -49,19 +51,26 @@ export default function Sidebar({ itemsCount, onAddItem, isDrawerOpen, onCloseDr
 
   async function handleLeave() {
     if (busy) return;
+
+    // If user is an admin and other members exist, show the Admin options modal
+    if (isAdmin && !isLastMember) {
+      setAdminLeaveModalOpen(true);
+      return;
+    }
+
     const ok = await confirm({
       title: 'Leave this household?',
       message: isLastMember
         ? 'You are the last member. Leaving will DELETE this household and everything in it.'
         : 'You can rejoin later with the invite code.',
-      confirmLabel: 'Leave',
+      confirmLabel: isLastMember ? 'Delete & leave' : 'Leave',
       danger: true,
     });
     if (!ok) return;
 
     setBusy(true);
     try {
-      await leave();
+      await leave(isLastMember ? { action: 'delete' } : undefined);
     } finally {
       setBusy(false);
     }
@@ -241,6 +250,19 @@ export default function Sidebar({ itemsCount, onAddItem, isDrawerOpen, onCloseDr
               await itemsApi.create(household.id, body);
             }
             setAddModalOpen(false);
+          }}
+        />
+      )}
+
+      {/* Admin Leave Household Modal */}
+      {adminLeaveModalOpen && (
+        <AdminLeaveModal
+          household={household}
+          currentUserId={user?.id}
+          onClose={() => setAdminLeaveModalOpen(false)}
+          onLeave={async (options) => {
+            await leave(options);
+            setAdminLeaveModalOpen(false);
           }}
         />
       )}

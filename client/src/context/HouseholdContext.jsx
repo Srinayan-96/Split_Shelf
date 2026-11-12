@@ -60,8 +60,8 @@ export function HouseholdProvider({ children }) {
     (body) => guard(async () => setHousehold(await householdApi.join(body))),
     [guard]
   );
-  const leave = useCallback(async () => {
-    await householdApi.leave(household.id);
+  const leave = useCallback(async (options) => {
+    await householdApi.leave(household.id, options);
     setHousehold(null);
   }, [household]);
   const regenerateCode = useCallback(

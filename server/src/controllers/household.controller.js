@@ -17,8 +17,8 @@ const mine = asyncHandler(async (req, res) => {
 });
 
 const leave = asyncHandler(async (req, res) => {
-  await service.leaveHousehold(req.userId, req.params.householdId);
-  res.json({ success: true });
+  const result = await service.leaveHousehold(req.userId, req.params.householdId, req.body);
+  res.json({ success: true, ...result });
 });
 
 const regenerateCode = asyncHandler(async (req, res) => {

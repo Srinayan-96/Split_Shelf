@@ -103,7 +103,38 @@ async function getMyHousehold(userId) {
 }
 
 // ---------- LEAVE ----------
-async function leaveHousehold(userId, householdId) {
+async function leaveHousehold(userId, householdId, options = {}) {
+  const { action, newAdminUserId } = options;
+
+  const current = await Household.findOne({ _id: householdId, 'members.user': userId });
+  if (!current) throw ApiError.notFound('Household not found');
+
+  const me = current.members.find((m) => String(m.user) === String(userId));
+  const isAdmin = me?.role === 'admin';
+
+  // Option A: Admin explicitly deletes the household and all its data
+  if (action === 'delete') {
+    if (!isAdmin) {
+      throw ApiError.forbidden('Only an admin can delete the household.');
+    }
+    await Household.deleteOne({ _id: householdId });
+    await deleteHouseholdData(householdId);
+    await Notification.deleteMany({ household: householdId });
+    return { deleted: true };
+  }
+
+  // Option B: Admin reassigns admin role to another member before leaving
+  if (newAdminUserId && String(newAdminUserId) !== String(userId)) {
+    const targetMember = current.members.find((m) => String(m.user) === String(newAdminUserId));
+    if (!targetMember) {
+      throw ApiError.badRequest('Selected member is not part of this household.');
+    }
+    await Household.updateOne(
+      { _id: householdId, 'members.user': newAdminUserId },
+      { $set: { 'members.$.role': 'admin' } }
+    );
+  }
+
   // Step 1: remove me. Atomic, and only matches if I'm actually a member.
   const household = await Household.findOneAndUpdate(
     { _id: householdId, 'members.user': userId },
@@ -120,7 +151,7 @@ async function leaveHousehold(userId, householdId) {
     // "Only if STILL empty" in the filter protects against someone joining in between.
     const res = await Household.deleteOne({ _id: householdId, members: { $size: 0 } });
     if (res.deletedCount === 1) await deleteHouseholdData(householdId);
-    return;
+    return { deleted: true };
   }
 
   // Step 2b: others remain. Make sure at least one admin does too. This update
@@ -131,6 +162,8 @@ async function leaveHousehold(userId, householdId) {
     { _id: householdId, 'members.role': { $ne: 'admin' } },
     { $set: { 'members.0.role': 'admin' } }
   );
+
+  return { left: true };
 }
 
 async function deleteHouseholdData(householdId) {

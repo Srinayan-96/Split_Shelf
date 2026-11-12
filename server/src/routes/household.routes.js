@@ -6,6 +6,7 @@ const validate = require('../middleware/validate');
 const {
   createHouseholdSchema,
   joinHouseholdSchema,
+  leaveHouseholdSchema,
 } = require('../validators/household.validators');
 const ctrl = require('../controllers/household.controller');
 
@@ -17,7 +18,7 @@ router.post('/', validate(createHouseholdSchema), ctrl.create);
 router.post('/join', joinLimiter, validate(joinHouseholdSchema), ctrl.join);
 router.get('/mine', ctrl.mine);
 
-router.post('/:householdId/leave', requireMember, ctrl.leave);
+router.post('/:householdId/leave', requireMember, validate(leaveHouseholdSchema), ctrl.leave);
 router.post('/:householdId/invite-code', requireMember, requireAdmin, ctrl.regenerateCode);
 
 module.exports = router;    
