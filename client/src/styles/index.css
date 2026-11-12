@@ -1,7 +1,7 @@
 :root,
 [data-theme='dark'] {
   /* Sage Dark Theme - Exact Specification */
-  --bg:             #12191d;  /* page canvas, darkest */
+  --bg:             #00629b;  /* page canvas, darkest */
   --surface:        #1b262b;  /* sidebar, sections, stat cards, table cards, panels */
   --surface-raised: #243439;  /* item cards, active nav, hover rows, code box */
   --border:         #3f5f58;  /* all 1px borders and dividers */
