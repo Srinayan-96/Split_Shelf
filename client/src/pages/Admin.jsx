@@ -1,7 +1,7 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
-import TopBar from '../components/TopBar';
-import AddItemForm from '../components/AddItemForm';
+import Sidebar from '../components/Sidebar';
+import MainHeader from '../components/MainHeader';
 import { useAuth } from '../hooks/useAuth';
 import { useHousehold } from '../hooks/useHousehold';
 import { useItems } from '../hooks/useItems';
@@ -13,159 +13,298 @@ export default function Admin() {
   const { household } = useHousehold();
   const { items, status, error, reload, addItem, deleteItem } = useItems(household.id);
   const confirm = useConfirm();
-  const [busyId, setBusyId] = useState(null);
+
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [selectedIds, setSelectedIds] = useState(new Set());
+  const [searchQuery, setSearchQuery] = useState('');
+  const [busy, setBusy] = useState(false);
   const [actionError, setActionError] = useState(null);
+
+  // Form states for "Add new product" card
+  const [name, setName] = useState('');
+  const [unit, setUnit] = useState('');
+  const [adding, setAdding] = useState(false);
 
   const me = household.members.find((m) => m.id === user.id);
   const isAdmin = me?.role === 'admin';
 
-  async function handleDelete(item) {
-    if (busyId) return;
+  // Toggle selection
+  function toggleRow(id) {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+
+  function toggleAll() {
+    if (selectedIds.size === items.length) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(items.map((i) => i.id)));
+    }
+  }
+
+  // Add Product from Top Card
+  async function handleAddProduct(e) {
+    e.preventDefault();
+    if (adding || !name.trim()) return;
+    setAdding(true);
+    setActionError(null);
+    try {
+      await addItem({ name: name.trim(), unit: unit.trim() || undefined });
+      setName('');
+      setUnit('');
+    } catch (err) {
+      setActionError(err.response?.data?.message || err.message || 'Could not add product.');
+    } finally {
+      setAdding(false);
+    }
+  }
+
+  // Delete selected products
+  async function handleDeleteSelected() {
+    if (busy || selectedIds.size === 0) return;
+    const count = selectedIds.size;
     const ok = await confirm({
-      title: 'Delete this item?',
-      message: `"${item.name}" and all of its purchase history will be permanently deleted from the household.`,
-      confirmLabel: 'Delete item',
+      title: `Delete ${count} product${count > 1 ? 's' : ''}?`,
+      message: `Permanently delete ${count} product${count > 1 ? 's' : ''} and all associated purchase history? This cannot be undone.`,
+      confirmLabel: `Delete ${count} product${count > 1 ? 's' : ''}`,
       danger: true,
     });
     if (!ok) return;
 
-    setBusyId(item.id);
+    setBusy(true);
     setActionError(null);
     try {
-      await deleteItem(item.id);
+      for (const id of Array.from(selectedIds)) {
+        await deleteItem(id);
+      }
+      setSelectedIds(new Set());
     } catch (err) {
-      setActionError(err.response?.data?.message || err.message || 'Could not delete item.');
+      setActionError(err.response?.data?.message || err.message || 'Failed deleting some items.');
     } finally {
-      setBusyId(null);
+      setBusy(false);
     }
   }
 
+  // Filtered items by search
+  const filteredItems = useMemo(() => {
+    if (!searchQuery.trim()) return items;
+    const q = searchQuery.toLowerCase();
+    return items.filter((i) => i.name.toLowerCase().includes(q));
+  }, [items, searchQuery]);
+
   return (
-    <div className="page">
-      <TopBar showBell />
-      
-      <div className="dash-head">
-        <h1>Admin Control Panel</h1>
-        <p className="muted">
-          Manage household items and settings for <strong>{household.name}</strong>.
-        </p>
-      </div>
+    <div className="app-shell-layout">
+      <Sidebar
+        itemsCount={items.length}
+        onAddItem={addItem}
+        isDrawerOpen={drawerOpen}
+        onCloseDrawer={() => setDrawerOpen(false)}
+      />
 
-      {!isAdmin ? (
-        <div className="panel section">
-          <h2>Admin Access Required</h2>
-          <p className="muted">You are currently a standard member. Only household administrators can access item management and admin controls.</p>
-          <Link to="/" className="btn btn-secondary btn-small" style={{ display: 'inline-block', marginTop: '1rem' }}>
-            ← Back to Shelf
-          </Link>
-        </div>
-      ) : (
-        <>
-          {actionError && <div className="alert" role="alert">{actionError}</div>}
-          {error && <div className="alert" role="alert">{error}</div>}
+      <main className="main-content-area">
+        <MainHeader
+          title="Admin Control Panel"
+          subtitle={`Manage household items and settings for ${household.name}.`}
+          onOpenMenu={() => setDrawerOpen(true)}
+        />
 
-          {/* Quick Add Product */}
-          <section className="panel section">
-            <h2>Add New Product</h2>
-            <p className="muted small">Add a product to the shelf that members can restock and track.</p>
-            <AddItemForm onAdd={addItem} />
-          </section>
+        {!isAdmin ? (
+          <div className="panel section">
+            <h2>Admin Access Required</h2>
+            <p className="muted">You are a standard member. Only household administrators can access the admin control panel.</p>
+            <Link to="/" className="btn btn-secondary btn-small" style={{ display: 'inline-block', marginTop: '1rem' }}>
+              ← Back to Shelf
+            </Link>
+          </div>
+        ) : (
+          <>
+            {actionError && <div className="alert">{actionError}</div>}
+            {error && <div className="alert">{error}</div>}
 
-          {/* Manage / Delete Existing Products */}
-          <section className="panel section">
-            <div className="group-head" style={{ marginBottom: '1rem' }}>
-              <h2>Household Products ({items.length})</h2>
-              <button className="btn btn-secondary btn-small" onClick={() => reload()} disabled={status === 'loading'}>
-                {status === 'loading' ? 'Refreshing…' : 'Refresh list'}
-              </button>
-            </div>
-
-            {status === 'loading' && items.length === 0 && (
-              <p className="muted">Loading products…</p>
-            )}
-
-            {items.length === 0 && status !== 'loading' ? (
-              <div className="empty">
-                <p><strong>No products added yet.</strong></p>
-                <p className="muted">Use the form above to add your first shared item.</p>
+            {/* Top row, two cards side by side (flex 2 / 1) */}
+            <div className="admin-top-cards-row">
+              {/* Card 1: Add new product card (flex 2) */}
+              <div className="panel admin-card-flex2">
+                <h2>Add new product</h2>
+                <p className="muted small">Quickly add shared restockable items to the household shelf.</p>
+                <form className="admin-inline-add-form" onSubmit={handleAddProduct} noValidate>
+                  <input
+                    type="text"
+                    placeholder="Product name (e.g. Dish soap)"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    required
+                  />
+                  <input
+                    type="text"
+                    placeholder="Unit (rolls, kg)"
+                    value={unit}
+                    onChange={(e) => setUnit(e.target.value)}
+                    style={{ maxWidth: '140px' }}
+                  />
+                  <button
+                    type="submit"
+                    className="btn btn-small"
+                    disabled={adding || !name.trim()}
+                  >
+                    {adding ? 'Adding…' : 'Add product'}
+                  </button>
+                </form>
               </div>
-            ) : (
-              <div className="order-card" style={{ margin: 0 }}>
-                <div className="order-head" style={{ gridTemplateColumns: '2fr 1fr 1fr 1.5fr auto' }}>
-                  <span>Product Name</span>
-                  <span>Unit</span>
-                  <span>Times Bought</span>
-                  <span>Last Restocked By</span>
-                  <span>Action</span>
+
+              {/* Card 2: Household summary card (flex 1) */}
+              <div className="panel admin-card-flex1">
+                <h2>Household summary</h2>
+                <div style={{ marginTop: '0.6rem' }}>
+                  <span className="muted small" style={{ display: 'block', marginBottom: '4px' }}>INVITE CODE</span>
+                  <code className="invite-code" style={{ fontSize: '1.15rem' }}>{household.inviteCode}</code>
                 </div>
-                <ul className="order-list">
-                  {items.map((item) => (
-                    <li
-                      key={item.id}
-                      className="order-row"
-                      style={{ gridTemplateColumns: '2fr 1fr 1fr 1.5fr auto' }}
-                    >
-                      <div className="order-item">
-                        <strong>
-                          <Link to={`/items/${item.id}`}>{item.name}</Link>
-                        </strong>
-                        <span className="muted small">
-                          Status: {item.status === 'low' ? 'Running Low' : 'In Stock'}
-                        </span>
-                      </div>
 
-                      <div>
-                        <span className="buy-label">Unit</span>
-                        {item.unit || '—'}
-                      </div>
-
-                      <div>
-                        <span className="buy-label">Purchases</span>
-                        {item.purchaseCount ?? 0}
-                      </div>
-
-                      <div>
-                        <span className="buy-label">Last restocked</span>
-                        {item.lastBoughtBy ? (
-                          <PersonName id={item.lastBoughtBy.id} name={item.lastBoughtBy.name} />
-                        ) : (
-                          <span className="muted">—</span>
-                        )}
-                      </div>
-
-                      <div>
-                        <button
-                          className="btn btn-danger btn-small"
-                          onClick={() => handleDelete(item)}
-                          disabled={busyId === item.id}
-                          title="Delete product"
-                        >
-                          {busyId === item.id ? 'Deleting…' : 'Delete'}
-                        </button>
-                      </div>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
-          </section>
-
-          {/* Household Info */}
-          <section className="panel section">
-            <h2>Household Summary</h2>
-            <div style={{ display: 'flex', gap: '2rem', flexWrap: 'wrap', marginTop: '0.75rem' }}>
-              <div>
-                <span className="buy-label">Invite Code</span>
-                <p style={{ margin: '0.2rem 0' }}><code className="code">{household.inviteCode}</code></p>
-              </div>
-              <div>
-                <span className="buy-label">Members</span>
-                <p style={{ margin: '0.2rem 0', fontWeight: 600 }}>{household.members.length} / {household.maxMembers}</p>
+                <div style={{ marginTop: '0.85rem' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
+                    <span className="muted small">Members</span>
+                    <strong style={{ fontSize: '0.85rem' }}>{household.members.length} / {household.maxMembers}</strong>
+                  </div>
+                  {/* Thin progress bar */}
+                  <div className="members-progress-track">
+                    <div
+                      className="members-progress-fill"
+                      style={{ width: `${Math.min(100, (household.members.length / household.maxMembers) * 100)}%` }}
+                    />
+                  </div>
+                </div>
               </div>
             </div>
-          </section>
-        </>
-      )}
+
+            {/* Products Table Card */}
+            <section className="panel section" style={{ marginTop: '1.25rem' }}>
+              <div className="admin-table-toolbar">
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                  <h2>Household products ({items.length})</h2>
+                  <button
+                    className="btn btn-secondary btn-small"
+                    onClick={() => reload()}
+                    disabled={status === 'loading'}
+                  >
+                    {status === 'loading' ? 'Refreshing…' : 'Refresh list'}
+                  </button>
+                </div>
+
+                <input
+                  type="search"
+                  className="search-input-field"
+                  placeholder="Filter products…"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  style={{ width: '220px' }}
+                />
+              </div>
+
+              {filteredItems.length === 0 ? (
+                <div className="empty">
+                  <p><strong>No products found.</strong></p>
+                  <p className="muted">Use the form above to add your first product.</p>
+                </div>
+              ) : (
+                <div className="order-card" style={{ margin: 0 }}>
+                  <div className="order-head admin-table-grid">
+                    <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <input
+                        type="checkbox"
+                        checked={selectedIds.size === items.length && items.length > 0}
+                        onChange={toggleAll}
+                        aria-label="Select all products"
+                      />
+                      <span>Product name &amp; status</span>
+                    </span>
+                    <span>Unit</span>
+                    <span>Times bought</span>
+                    <span>Last restocked by</span>
+                  </div>
+
+                  <ul className="order-list">
+                    {filteredItems.map((item) => {
+                      const isSelected = selectedIds.has(item.id);
+                      const isLow = item.status === 'low';
+
+                      return (
+                        <li
+                          key={item.id}
+                          className={`order-row admin-table-grid ${isSelected ? 'row-selected' : ''}`}
+                        >
+                          <div className="order-item" style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', gap: '10px' }}>
+                            <input
+                              type="checkbox"
+                              checked={isSelected}
+                              onChange={() => toggleRow(item.id)}
+                              aria-label={`Select ${item.name}`}
+                            />
+                            <div>
+                              <strong style={{ fontSize: '0.98rem' }}>{item.name}</strong>
+                              <span style={{ marginLeft: '8px' }}>
+                                <span className={`badge ${isLow ? 'badge-accent' : ''}`}>
+                                  {isLow ? 'Running low' : 'In stock'}
+                                </span>
+                              </span>
+                            </div>
+                          </div>
+
+                          <div>
+                            <span className="buy-label">Unit</span>
+                            {item.unit || '—'}
+                          </div>
+
+                          <div>
+                            <span className="buy-label">Times bought</span>
+                            {item.purchaseCount ?? 0}
+                          </div>
+
+                          <div>
+                            <span className="buy-label">Last restocked</span>
+                            {item.lastBoughtBy ? (
+                              <PersonName id={item.lastBoughtBy.id} name={item.lastBoughtBy.name} />
+                            ) : (
+                              <span className="muted">Not yet</span>
+                            )}
+                          </div>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </div>
+              )}
+            </section>
+
+            {/* Floating Selection Bar (Centered at bottom when rows are selected) */}
+            {selectedIds.size > 0 && (
+              <div className="floating-selection-pill-bar" role="toolbar" aria-label="Bulk actions">
+                <button
+                  className="pill-close-btn"
+                  onClick={() => setSelectedIds(new Set())}
+                  aria-label="Clear selection"
+                >
+                  ✕
+                </button>
+                <span className="pill-selection-count">
+                  {selectedIds.size} product{selectedIds.size > 1 ? 's' : ''} selected
+                </span>
+                <span className="pill-divider">|</span>
+                <button
+                  className="pill-action-btn pill-delete-btn"
+                  onClick={handleDeleteSelected}
+                  disabled={busy}
+                >
+                  {busy ? 'Deleting…' : 'Delete'}
+                </button>
+              </div>
+            )}
+          </>
+        )}
+      </main>
     </div>
   );
 }

@@ -1,186 +1,257 @@
-import { useState } from 'react';
-import TopBar from '../components/TopBar';
+import { useMemo, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
+import Sidebar from '../components/Sidebar';
+import MainHeader from '../components/MainHeader';
 import ItemCard from '../components/ItemCard';
-import AddItemForm from '../components/AddItemForm';
+import ShelfSkeleton from '../components/ShelfSkeleton';
+import ItemDetailSlideOver from '../components/ItemDetailSlideOver';
 import { useAuth } from '../hooks/useAuth';
 import { useHousehold } from '../hooks/useHousehold';
 import { useItems } from '../hooks/useItems';
-import { useConfirm } from '../hooks/useConfirm';
 import { parseApiError } from '../api/client';
-import ShelfSkeleton from '../components/ShelfSkeleton';
-import PersonName from '../components/PersonName';
 
 export default function Home() {
   const { user } = useAuth();
-  const confirm = useConfirm();
-  const { household, leave, regenerateCode } = useHousehold();
-  const { items, status, error: itemsError, reload, addItem, markLow, markBought, deleteItem } = useItems(household.id);
+  const { household } = useHousehold();
+  const { items, status, error: itemsError, reload, addItem, markLow, deleteItem } = useItems(household.id);
 
-  const [busy, setBusy] = useState(false);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [activeTab, setActiveTab] = useState('board'); // 'board' | 'list'
+  const [drawerOpen, setDrawerOpen] = useState(false);
   const [error, setError] = useState(null);
-  const [copyState, setCopyState] = useState('idle'); // 'idle' | 'copied' | 'failed'
+
+  // Selected Item for Slide-Over Panel
+  const [selectedItemId, setSelectedItemId] = useState(() => searchParams.get('item'));
+  const [openPurchaseForm, setOpenPurchaseForm] = useState(false);
+  const [detailTab, setDetailTab] = useState('purchases');
 
   const me = household.members.find((m) => m.id === user.id);
   const isAdmin = me?.role === 'admin';
-  const isLastMember = household.members.length === 1;
-  const lowCount = items.filter((i) => i.status === 'low').length;
 
-  async function run(action) {
-    if (busy) return;
-    setBusy(true);
-    setError(null);
+  // Live filter into Running Low vs In Stock
+  const { lowItems, inStockItems } = useMemo(() => {
+    const low = [];
+    const stock = [];
+    items.forEach((item) => {
+      if (item.status === 'low') low.push(item);
+      else stock.push(item);
+    });
+    return { lowItems: low, inStockItems: stock };
+  }, [items]);
+
+  // Open detail panel helper
+  function handleOpenDetail(itemId, tab = 'purchases', openForm = false) {
+    setSelectedItemId(itemId);
+    setDetailTab(tab);
+    setOpenPurchaseForm(openForm);
+    setSearchParams({ item: itemId });
+  }
+
+  function handleCloseDetail() {
+    setSelectedItemId(null);
+    setOpenPurchaseForm(false);
+    setSearchParams({});
+  }
+
+  // Mark Low handler
+  async function handleMarkLow(itemId) {
     try {
-      await action();
+      await markLow(itemId);
     } catch (err) {
       setError(parseApiError(err).message);
-    } finally {
-      setBusy(false);
     }
-  }
-
-  async function handleLeave() {
-    const ok = await confirm({
-      title: 'Leave this household?',
-      message: isLastMember
-        ? 'You are the last member. Leaving will DELETE this household and everything in it.'
-        : 'You can rejoin later with the invite code.',
-      confirmLabel: 'Leave',
-      danger: true,
-    });
-    if (ok) run(leave);
-  }
-
-  async function handleNewCode() {
-    const ok = await confirm({
-      title: 'Create a new invite code?',
-      message: 'The old code will stop working straight away.',
-      confirmLabel: 'Create new code',
-    });
-    if (ok) run(regenerateCode);
-  }
-
-  async function copyCode() {
-    try {
-      await navigator.clipboard.writeText(household.inviteCode);
-      setCopyState('copied');
-    } catch {
-      setCopyState('failed');
-    }
-    setTimeout(() => setCopyState('idle'), 2000);
   }
 
   return (
-    <div className="page">
-      <TopBar showBell />
+    <div className="app-shell-layout">
+      {/* 248px Fixed Sidebar */}
+      <Sidebar
+        itemsCount={items.length}
+        onAddItem={addItem}
+        isDrawerOpen={drawerOpen}
+        onCloseDrawer={() => setDrawerOpen(false)}
+      />
 
-      <div className="dash-head">
-        <div>
-          <h1>{household.name}</h1>
-          <p className="muted">Shared shelf for this household.</p>
-        </div>
-      </div>
+      {/* Main Content Area */}
+      <main className="main-content-area">
+        {/* Main Header */}
+        <MainHeader
+          title={household.name}
+          subtitle="Shared shelf for this household."
+          onOpenMenu={() => setDrawerOpen(true)}
+        />
 
-      {error && <div className="alert" role="alert">{error}</div>}
+        {error && <div className="alert" role="alert">{error}</div>}
+        {itemsError && <div className="alert" role="alert">{itemsError}</div>}
 
-      <div className="stat-row">
-        <article className="stat stat-rose">
-          <span>On the shelf</span>
-          <strong>{status === 'ready' ? items.length : '—'}</strong>
-        </article>
-        <article className="stat stat-amber">
-          <span>Running low</span>
-          <strong>{status === 'ready' ? lowCount : '—'}</strong>
-        </article>
-        <article className="stat stat-violet">
-          <span>Members</span>
-          <strong>{household.members.length}<small> / {household.maxMembers}</small></strong>
-        </article>
-        <article className="stat stat-teal">
-          <span>Your role</span>
-          <strong>{isAdmin ? 'Admin' : 'Member'}</strong>
-        </article>
-      </div>
+        {/* B. Stats row: 4 equal cards */}
+        <section className="stats-row" aria-label="Household statistics">
+          <article className="stat-card">
+            <span className="stat-label">On the shelf</span>
+            <strong className="stat-value">{status === 'ready' ? items.length : '—'}</strong>
+          </article>
+          <article className="stat-card">
+            <span className="stat-label">Running low</span>
+            <strong className="stat-value">{status === 'ready' ? lowItems.length : '—'}</strong>
+          </article>
+          <article className="stat-card">
+            <span className="stat-label">Members</span>
+            <strong className="stat-value">
+              {household.members.length} <span className="stat-sub">/ {household.maxMembers}</span>
+            </strong>
+          </article>
+          <article className="stat-card">
+            <span className="stat-label">Your role</span>
+            <strong className="stat-value">{isAdmin ? 'Admin' : 'Member'}</strong>
+          </article>
+        </section>
 
-      <div className="dash-layout">
-      <section className="section">
-        <h2>Your shelf</h2>
-        <AddItemForm onAdd={addItem} />
-
-        {status === 'loading' && (
-          <>
-            <span className="sr-only" role="status">Loading your shelf…</span>
-            <ShelfSkeleton />
-          </>
-        )}
-
-        {status === 'error' && (
-          <div className="stack">
-            <div className="alert" role="alert">{itemsError}</div>
-            <button className="btn btn-small" onClick={() => reload()}>Try again</button>
-          </div>
-        )}
-
-        {status === 'ready' && items.length === 0 && (
-          <div className="panel empty">
-            <p><strong>Nothing on the shelf yet.</strong></p>
-            <p className="muted">
-              Add the things you share, like toilet paper or dish soap. Log each purchase and
-              Split Shelf will learn how long things last.
-            </p>
-          </div>
-        )}
-
-        {status === 'ready' && items.length > 0 && (
-          <div className="shelf-grid">
-            {items.map((item) => (
-              <ItemCard
-                key={item.id}
-                item={item}
-                onLow={markLow}
-                onBought={markBought}
-                onDelete={deleteItem}
-                isAdmin={isAdmin}
-              />
-            ))}
-          </div>
-        )}
-      </section>
-
-      <aside className="side-stack">
-      <section className="panel section">
-        <h2>Invite flatmates</h2>
-        <div className="code-row">
-          <code className="code">{household.inviteCode}</code>
-          <button className="btn btn-secondary btn-small" onClick={copyCode}>
-            {copyState === 'copied' ? 'Copied' : copyState === 'failed' ? 'Press Ctrl+C' : 'Copy'}
-          </button>
-          {isAdmin && (
-            <button className="btn btn-secondary btn-small" onClick={handleNewCode} disabled={busy}>
-              New code
+        {/* C. Tab strip with title "Your shelf" and tabs Board | List */}
+        <div className="shelf-tabs-strip">
+          <h2 className="shelf-strip-title">Your shelf</h2>
+          <div className="strip-tab-group" role="tablist">
+            <button
+              role="tab"
+              aria-selected={activeTab === 'board'}
+              className={`strip-tab-btn ${activeTab === 'board' ? 'active' : ''}`}
+              onClick={() => setActiveTab('board')}
+            >
+              Board
             </button>
-          )}
+            <button
+              role="tab"
+              aria-selected={activeTab === 'list'}
+              className={`strip-tab-btn ${activeTab === 'list' ? 'active' : ''}`}
+              onClick={() => setActiveTab('list')}
+            >
+              List
+            </button>
+          </div>
         </div>
-      </section>
 
-      <section className="panel section">
-        <h2>Members</h2>
-        <ul className="member-list">
-          {household.members.map((m) => (
-            <li key={m.id}>
-              <span>
-                <PersonName id={m.id} name={m.name} suffix={m.id === user.id ? ' (you)' : ''} />
-              </span>
-              <span className={`badge ${m.role === 'admin' ? 'badge-accent' : ''}`}>{m.role}</span>
-            </li>
-          ))}
-        </ul>
-      </section>
-      </aside>
-      </div>
+        {status === 'loading' && <ShelfSkeleton />}
 
-      <button className="btn btn-danger btn-small" onClick={handleLeave} disabled={busy}>
-        Leave household
-      </button>
+        {/* D. BOARD VIEW */}
+        {status === 'ready' && activeTab === 'board' && (
+          <div className="board-container">
+            {/* Column 1: Running Low */}
+            <div className="board-column">
+              <div className="board-column-header">
+                <span className="column-title">Running low</span>
+                <span className="count-pill-accent">{lowItems.length}</span>
+              </div>
+
+              <div className="column-cards-list">
+                {lowItems.length === 0 ? (
+                  <div className="dashed-empty-note">
+                    Nothing is running low. Tap Running low on an item to flag it for everyone.
+                  </div>
+                ) : (
+                  lowItems.map((item) => (
+                    <ItemCard
+                      key={item.id}
+                      item={item}
+                      onLow={handleMarkLow}
+                      onOpenDetail={handleOpenDetail}
+                    />
+                  ))
+                )}
+              </div>
+            </div>
+
+            {/* Column 2: In Stock */}
+            <div className="board-column">
+              <div className="board-column-header">
+                <span className="column-title">In stock</span>
+                <span className="count-pill">{inStockItems.length}</span>
+              </div>
+
+              <div className="column-cards-list">
+                {inStockItems.length === 0 ? (
+                  <div className="dashed-empty-note">
+                    All items are either running low or nothing has been added yet.
+                  </div>
+                ) : (
+                  inStockItems.map((item) => (
+                    <ItemCard
+                      key={item.id}
+                      item={item}
+                      onLow={handleMarkLow}
+                      onOpenDetail={handleOpenDetail}
+                    />
+                  ))
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* LIST VIEW (Alternative representation) */}
+        {status === 'ready' && activeTab === 'list' && (
+          <div className="panel list-table-card">
+            {items.length === 0 ? (
+              <div className="empty">
+                <p><strong>Nothing on the shelf yet.</strong></p>
+                <p className="muted">Click "+ Add item" in the sidebar to add products.</p>
+              </div>
+            ) : (
+              <div className="order-card" style={{ margin: 0 }}>
+                <div className="order-head">
+                  <span>Product Name</span>
+                  <span>Unit</span>
+                  <span>Times Bought</span>
+                  <span>Status</span>
+                  <span>Action</span>
+                </div>
+                <ul className="order-list">
+                  {items.map((item) => (
+                    <li key={item.id} className="order-row">
+                      <div className="order-item">
+                        <button
+                          className="item-name-btn"
+                          onClick={() => handleOpenDetail(item.id, 'purchases')}
+                        >
+                          {item.name}
+                        </button>
+                      </div>
+                      <div><span className="buy-label">Unit</span>{item.unit || '—'}</div>
+                      <div><span className="buy-label">Purchases</span>{item.purchaseCount ?? 0}</div>
+                      <div>
+                        <span className={`badge ${item.status === 'low' ? 'badge-accent' : ''}`}>
+                          {item.status === 'low' ? 'Running low' : 'In stock'}
+                        </span>
+                      </div>
+                      <div>
+                        <button
+                          className="btn btn-secondary btn-small"
+                          onClick={() => handleOpenDetail(item.id, 'purchases')}
+                        >
+                          View
+                        </button>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* 4. ITEM DETAIL SLIDE-OVER PANEL */}
+        {selectedItemId && (
+          <ItemDetailSlideOver
+            itemId={selectedItemId}
+            householdId={household.id}
+            isAdmin={isAdmin}
+            currentUserId={user.id}
+            onClose={handleCloseDetail}
+            onItemUpdated={() => reload({ silent: true })}
+            onItemDeleted={() => reload({ silent: true })}
+            initialOpenForm={openPurchaseForm}
+            initialTab={detailTab}
+          />
+        )}
+      </main>
     </div>
   );
 }

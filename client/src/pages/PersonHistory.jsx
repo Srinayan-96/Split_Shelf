@@ -1,18 +1,19 @@
 import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import TopBar from '../components/TopBar';
+import Sidebar from '../components/Sidebar';
+import MainHeader from '../components/MainHeader';
 import { useHousehold } from '../hooks/useHousehold';
 import * as historyApi from '../api/history';
 import { parseApiError } from '../api/client';
-import PurchaseBlock from '../components/PurchaseBlock';
-import PersonName from '../components/PersonName';
+import { formatDate, formatMoney, formatQty } from '../utils/format';
 
 export default function PersonHistory() {
   const { userId } = useParams();
   const { household } = useHousehold();
   const [data, setData] = useState(null);
-  const [status, setStatus] = useState('loading'); // 'loading' | 'ready' | 'missing' | 'error'
+  const [status, setStatus] = useState('loading');
   const [error, setError] = useState(null);
+  const [drawerOpen, setDrawerOpen] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -28,54 +29,83 @@ export default function PersonHistory() {
         if (cancelled) return;
         const code = err.response?.status;
         if (code === 404 || code === 400) setStatus('missing');
-        else { setError(parseApiError(err).message); setStatus('error'); }
+        else {
+          setError(parseApiError(err).message);
+          setStatus('error');
+        }
       });
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [household.id, userId]);
 
   return (
-    <div className="page">
-      <TopBar showBell />
-      <Link to="/history" className="back-link">← Back to history</Link>
+    <div className="app-shell-layout">
+      <Sidebar
+        isDrawerOpen={drawerOpen}
+        onCloseDrawer={() => setDrawerOpen(false)}
+      />
 
-      {status === 'loading' && <p className="muted">Loading…</p>}
-      {status === 'missing' && <p>We couldn't find that person.</p>}
-      {status === 'error' && <div className="alert" role="alert">{error}</div>}
+      <main className="main-content-area">
+        <MainHeader
+          title={data?.person?.name || 'Member Purchases'}
+          subtitle={
+            data
+              ? `${data.purchaseCount} purchase${data.purchaseCount === 1 ? '' : 's'} in the last 12 months`
+              : 'Detailed purchase history.'
+          }
+          onOpenMenu={() => setDrawerOpen(true)}
+        />
 
-      {status === 'ready' && (
-        <>
-          <h1><PersonName id={data.person.id} name={data.person.name} /></h1>
-          <p className="muted">
-            {data.purchaseCount} purchase{data.purchaseCount === 1 ? '' : 's'} in the last 12 months
-            {data.truncated && ' (showing the most recent 500)'}
-          </p>
+        <Link to="/history" className="back-link">
+          ← Back to history
+        </Link>
 
-          {data.byItem.length === 0 && (
-            <div className="panel empty"><p className="muted">Nothing bought yet.</p></div>
-          )}
+        {status === 'loading' && <p className="muted">Loading member purchases…</p>}
+        {status === 'missing' && <p>We couldn't find that person.</p>}
+        {error && <div className="alert">{error}</div>}
 
-          {data.byItem.map((group) => (
-            <section key={group.item.id} className="panel section">
-              <div className="group-head">
-                <h2>{group.item.name}</h2>
-                <span className="badge">bought {group.times} time{group.times === 1 ? '' : 's'}</span>
+        {status === 'ready' && data && (
+          <div className="person-history-container">
+            {data.byItem.length === 0 ? (
+              <div className="panel empty">
+                <p className="muted">Nothing bought yet in the last 12 months.</p>
               </div>
-              <div className="buy-stack">
-                {group.purchases.map((p) => (
-                  <PurchaseBlock
-                    key={p.id}
-                    quantity={p.quantity}
-                    unit={group.item.unit}
-                    pricePaise={p.pricePaise}
-                    when={p.boughtAt}
-                    note={p.note}
-                  />
-                ))}
-              </div>
-            </section>
-          ))}
-        </>
-      )}
+            ) : (
+              data.byItem.map((group) => (
+                <section key={group.item.id} className="panel section">
+                  <div className="group-head">
+                    <h2>{group.item.name}</h2>
+                    <span className="badge">
+                      bought {group.times} time{group.times === 1 ? '' : 's'}
+                    </span>
+                  </div>
+
+                  <ul className="feed-list" style={{ marginTop: '0.75rem' }}>
+                    {group.purchases.map((p) => (
+                      <li key={p.id}>
+                        <div>
+                          <strong>{formatDate(p.boughtAt)}</strong>
+                          <span className="muted">
+                            {' '}
+                            · {formatQty(p.quantity)} {group.item.unit}
+                          </span>
+                          {p.note && (
+                            <div className="muted small" style={{ marginTop: '0.2rem' }}>
+                              “{p.note}”
+                            </div>
+                          )}
+                        </div>
+                        <span className="money">{formatMoney(p.pricePaise)}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </section>
+              ))
+            )}
+          </div>
+        )}
+      </main>
     </div>
   );
 }
