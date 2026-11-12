@@ -8,9 +8,10 @@ import { useItems } from '../hooks/useItems';
 import * as historyApi from '../api/history';
 import { parseApiError } from '../api/client';
 import { dayLabel, formatDate, formatMoney, formatQty } from '../utils/format';
+import { cleanUnit } from '../utils/units';
 import PersonName from '../components/PersonName';
 
-const PAGE = 20;
+const PAGE = 10;
 
 function groupByDay(purchases) {
   const groups = [];
@@ -97,6 +98,21 @@ export default function History() {
       return true;
     });
   }, [purchases, activeFilter, searchQuery, user.id]);
+
+  // 10 records per page pagination
+  const [currentPage, setCurrentPage] = useState(1);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [activeFilter, searchQuery]);
+
+  const totalRecords = filteredPurchases.length;
+  const totalPages = Math.max(1, Math.ceil(totalRecords / PAGE));
+  const startIndex = (currentPage - 1) * PAGE;
+  const endIndex = Math.min(startIndex + PAGE, totalRecords);
+  const currentRecords = useMemo(() => {
+    return filteredPurchases.slice(startIndex, startIndex + PAGE);
+  }, [filteredPurchases, startIndex]);
 
   return (
     <div className="app-shell-layout">
@@ -227,8 +243,8 @@ export default function History() {
                       <span>Price</span>
                     </div>
 
-                    {/* Group by day */}
-                    {groupByDay(filteredPurchases).map((group) => (
+                    {/* Group by day (10 records per page) */}
+                    {groupByDay(currentRecords).map((group) => (
                       <div key={group.label} className="day-purchase-group">
                         <div className="day-separator-row">
                           <span className="day-label-text">{group.label}</span>
@@ -245,7 +261,7 @@ export default function History() {
                             </div>
                             <div className="col-cell">
                               <span className="buy-label">Unit</span>
-                              {p.item?.unit || '—'}
+                              {cleanUnit(p.item?.unit)}
                             </div>
                             <div className="col-cell">
                               <span className="buy-label">By</span>
@@ -263,21 +279,47 @@ export default function History() {
                         ))}
                       </div>
                     ))}
+
+                    {/* Pagination Footer (10 records per page) */}
+                    <div className="history-pagination-bar">
+                      <span className="pagination-info muted small">
+                        Showing {totalRecords === 0 ? 0 : startIndex + 1}–{endIndex} of {totalRecords}{cursor ? '+' : ''} purchases
+                      </span>
+
+                      <div className="pagination-controls">
+                        <button
+                          type="button"
+                          className="btn btn-secondary btn-small"
+                          onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                          disabled={currentPage === 1}
+                        >
+                          ← Previous
+                        </button>
+
+                        <span className="pagination-page-indicator">
+                          Page <strong>{currentPage}</strong> of <strong>{totalPages}</strong>
+                        </span>
+
+                        <button
+                          type="button"
+                          className="btn btn-secondary btn-small"
+                          onClick={async () => {
+                            if (currentPage < totalPages) {
+                              setCurrentPage((p) => p + 1);
+                            } else if (cursor) {
+                              await loadMore();
+                              setCurrentPage((p) => p + 1);
+                            }
+                          }}
+                          disabled={(currentPage >= totalPages && !cursor) || loadingMore}
+                        >
+                          {loadingMore ? 'Loading…' : 'Next →'}
+                        </button>
+                      </div>
+                    </div>
                   </div>
                 )}
               </div>
-
-              {cursor && (
-                <div style={{ marginTop: '1rem', textAlign: 'center' }}>
-                  <button
-                    className="btn btn-secondary btn-small"
-                    onClick={loadMore}
-                    disabled={loadingMore}
-                  >
-                    {loadingMore ? 'Loading older…' : 'Show older'}
-                  </button>
-                </div>
-              )}
             </section>
           </>
         )}

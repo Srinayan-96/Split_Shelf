@@ -1343,6 +1343,25 @@ textarea:focus {
   align-items: center;
   gap: 6px;
 }
+.history-pagination-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 18px;
+  background: var(--surface);
+  border-top: 1px solid var(--border);
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.pagination-controls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.pagination-page-indicator {
+  font-size: 13px;
+  color: var(--text);
+}
 .buy-label { display: none; }
 
 /* Person History & Tabs */
