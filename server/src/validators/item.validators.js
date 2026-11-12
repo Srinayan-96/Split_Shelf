@@ -22,6 +22,7 @@ const boughtSchema = z.object({
     ),
 
   quantity: z.number().positive().max(100000).optional(),
+  unit: z.string().trim().max(20).optional(),
   // Whole paise only. The server refuses decimals such as 49.5.
   pricePaise: z.number().int().min(0).max(100_000_000).optional(),
   note: z.string().trim().max(200).optional(),

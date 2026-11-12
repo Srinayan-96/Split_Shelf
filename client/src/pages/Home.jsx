@@ -14,7 +14,7 @@ import { timeAgo } from '../utils/format';
 export default function Home() {
   const { user } = useAuth();
   const { household } = useHousehold();
-  const { items, status, error: itemsError, reload, addItem, markLow, deleteItem } = useItems(household.id);
+  const { items, status, error: itemsError, reload, addItem, markLow, deleteItem, replaceItem } = useItems(household.id);
 
   const [searchParams, setSearchParams] = useSearchParams();
   const [activeTab, setActiveTab] = useState('board'); // 'board' | 'list'
@@ -293,7 +293,10 @@ export default function Home() {
             isAdmin={isAdmin}
             currentUserId={user.id}
             onClose={handleCloseDetail}
-            onItemUpdated={() => reload({ silent: true })}
+            onItemUpdated={(updated) => {
+              if (updated) replaceItem(updated);
+              reload({ silent: true });
+            }}
             onItemDeleted={() => reload({ silent: true })}
             initialOpenForm={openPurchaseForm}
             initialTab={detailTab}

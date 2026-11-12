@@ -4,6 +4,7 @@ import Sidebar from '../components/Sidebar';
 import MainHeader from '../components/MainHeader';
 import { useAuth } from '../hooks/useAuth';
 import { useHousehold } from '../hooks/useHousehold';
+import { useItems } from '../hooks/useItems';
 import * as historyApi from '../api/history';
 import { parseApiError } from '../api/client';
 import { dayLabel, formatDate, formatMoney, formatQty } from '../utils/format';
@@ -25,6 +26,7 @@ function groupByDay(purchases) {
 export default function History() {
   const { user } = useAuth();
   const { household } = useHousehold();
+  const { items, addItem } = useItems(household.id);
   const [people, setPeople] = useState([]);
   const [purchases, setPurchases] = useState([]);
   const [cursor, setCursor] = useState(null);
@@ -99,6 +101,8 @@ export default function History() {
   return (
     <div className="app-shell-layout">
       <Sidebar
+        itemsCount={items.length}
+        onAddItem={addItem}
         isDrawerOpen={drawerOpen}
         onCloseDrawer={() => setDrawerOpen(false)}
       />
@@ -110,7 +114,24 @@ export default function History() {
           onOpenMenu={() => setDrawerOpen(true)}
         />
 
-        {status === 'loading' && <p className="muted">Loading history…</p>}
+        {status === 'loading' && (
+          <div className="history-skeleton-section" aria-busy="true">
+            <div className="history-people-grid">
+              <div className="history-person-card history-card-skeleton">
+                <span className="muted">Loading members…</span>
+              </div>
+              <div className="history-person-card history-card-skeleton">
+                <span className="muted">Loading members…</span>
+              </div>
+              <div className="history-person-card history-card-skeleton">
+                <span className="muted">Loading members…</span>
+              </div>
+            </div>
+            <div style={{ marginTop: '24px' }}>
+              <p className="muted">Loading purchases feed…</p>
+            </div>
+          </div>
+        )}
         {error && <div className="alert">{error}</div>}
 
         {status === 'ready' && (

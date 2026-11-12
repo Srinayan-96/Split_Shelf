@@ -5,6 +5,7 @@ import { useHousehold } from '../hooks/useHousehold';
 import { useConfirm } from '../hooks/useConfirm';
 import PersonName from './PersonName';
 import AddItemModal from './AddItemModal';
+import * as itemsApi from '../api/items';
 
 export default function Sidebar({ itemsCount, onAddItem, isDrawerOpen, onCloseDrawer }) {
   const { user, logout } = useAuth();
@@ -15,7 +16,7 @@ export default function Sidebar({ itemsCount, onAddItem, isDrawerOpen, onCloseDr
   const [busy, setBusy] = useState(false);
   const [addModalOpen, setAddModalOpen] = useState(false);
 
-  const me = household?.members?.find((m) => m.id === user.id);
+  const me = household?.members?.find((m) => String(m?.id) === String(user?.id));
   const isAdmin = me?.role === 'admin';
   const isLastMember = household?.members?.length === 1;
 
@@ -171,7 +172,7 @@ export default function Sidebar({ itemsCount, onAddItem, isDrawerOpen, onCloseDr
             {household?.members?.map((m) => (
               <li key={m.id} className="sidebar-member-row">
                 <div className="member-avatar-name">
-                  <PersonName id={m.id} name={m.name} suffix={m.id === user?.id ? ' (you)' : ''} />
+                  <PersonName id={m.id} name={m.name} suffix={String(m?.id) === String(user?.id) ? ' (you)' : ''} />
                 </div>
                 {m.role === 'admin' && (
                   <span className="badge badge-accent member-admin-badge">admin</span>
@@ -234,7 +235,11 @@ export default function Sidebar({ itemsCount, onAddItem, isDrawerOpen, onCloseDr
         <AddItemModal
           onClose={() => setAddModalOpen(false)}
           onAdd={async (body) => {
-            if (onAddItem) await onAddItem(body);
+            if (onAddItem) {
+              await onAddItem(body);
+            } else if (household?.id) {
+              await itemsApi.create(household.id, body);
+            }
             setAddModalOpen(false);
           }}
         />

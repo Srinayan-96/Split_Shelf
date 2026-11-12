@@ -1075,6 +1075,11 @@ textarea:focus {
 .panel-purchase-container .field input {
   background: var(--bg);
 }
+.panel-qty-unit-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
 
 /* Tabs bar inside slide-over */
 .panel-tabs-bar {
@@ -1630,10 +1635,22 @@ textarea:focus {
   min-width: 100px;
 }
 
+/* Skeleton loaders */
+.history-card-skeleton {
+  opacity: 0.6;
+  min-height: 80px;
+  pointer-events: none;
+  animation: pulse-skeleton 1.5s ease-in-out infinite;
+}
+@keyframes pulse-skeleton {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 0.75; }
+}
+
 /* ==========================================================================
    8. RESPONSIVE
    ========================================================================== */
-@media (max-width: 900px) {
+@media (max-width: 768px) {
   .menu-drawer-btn { display: grid; }
   .app-sidebar {
     position: fixed;

@@ -3,6 +3,7 @@ import { Link, useParams } from 'react-router-dom';
 import Sidebar from '../components/Sidebar';
 import MainHeader from '../components/MainHeader';
 import { useHousehold } from '../hooks/useHousehold';
+import { useItems } from '../hooks/useItems';
 import * as historyApi from '../api/history';
 import { parseApiError } from '../api/client';
 import { formatDate, formatMoney, formatQty } from '../utils/format';
@@ -10,6 +11,7 @@ import { formatDate, formatMoney, formatQty } from '../utils/format';
 export default function PersonHistory() {
   const { userId } = useParams();
   const { household } = useHousehold();
+  const { items, addItem } = useItems(household.id);
   const [data, setData] = useState(null);
   const [status, setStatus] = useState('loading');
   const [error, setError] = useState(null);
@@ -42,6 +44,8 @@ export default function PersonHistory() {
   return (
     <div className="app-shell-layout">
       <Sidebar
+        itemsCount={items.length}
+        onAddItem={addItem}
         isDrawerOpen={drawerOpen}
         onCloseDrawer={() => setDrawerOpen(false)}
       />

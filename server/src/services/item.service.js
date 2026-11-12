@@ -150,7 +150,7 @@ async function markBought(
   household,
   itemId,
   userId,
-  { idempotencyKey, boughtAt, quantity, pricePaise, note }
+  { idempotencyKey, boughtAt, quantity, pricePaise, note, unit }
 ) {
   const item = await Item.findOne({ _id: itemId, household: household._id });
   if (!item) throw ApiError.notFound('Item not found');
@@ -188,7 +188,7 @@ async function markBought(
 
   // STEP 2: apply the purchase to the item. Runs on replays too, on purpose: if
   // the server crashed after step 1 last time, the retry repairs the item.
-  const updated = await applyPurchaseToItem(household, item._id, log);
+  const updated = await applyPurchaseToItem(household, item._id, log, unit);
   if (!updated) throw ApiError.notFound('Item not found'); // deleted while we worked
 
   // The item is restocked, so earlier "running low" / "your turn" alerts for it are stale.
@@ -197,43 +197,44 @@ async function markBought(
   return { item: toPublicItem(updated, await loadContext(household)), replayed };
 }
 
-async function applyPurchaseToItem(household, itemId, log) {
-  const [recent, purchaseCount] = await Promise.all([
+async function applyPurchaseToItem(household, itemId, log, unit) {
+  const [recent, purchaseCount, latestLog] = await Promise.all([
     RestockLog.find({ item: itemId })
       .sort({ boughtAt: -1 })
       .limit(RECENT_PURCHASES_USED)
       .select('boughtAt'),
     RestockLog.countDocuments({ item: itemId }),
+    RestockLog.findOne({ item: itemId }).sort({ boughtAt: -1 }),
   ]);
   const { avgIntervalDays, predictedRunOutAt, usableGaps } = computePrediction(
     recent.map((l) => l.boughtAt)
   );
 
-  // These depend on the whole log, not on this one purchase, so they're always safe to write.
-  await Item.updateOne(
-    { _id: itemId },
-    { $set: { avgIntervalDays, predictedRunOutAt, forecastGaps: usableGaps, purchaseCount } }
-  );
-
-  // The "current state" fields change only if this purchase is NEWER than the one
-  // already recorded. That makes it:
-  //  - safe to repeat (a replay has the same time, so it's not "newer": no-op)
-  //  - correct when two roommates buy at nearly the same moment (the later purchase
-  //    wins, whichever request happens to arrive last)
-  //  - safe for backdated entries (they don't overwrite a more recent purchase)
   const memberIds = household.members.map((m) => m.user);
-  const updated = await Item.findOneAndUpdate(
-    { _id: itemId, $or: [{ lastBoughtAt: null }, { lastBoughtAt: { $lt: log.boughtAt } }] },
-    {
-      $set: {
-        status: 'ok',
-        lowMarkedBy: null,
-        lowMarkedAt: null,
-        lastBoughtBy: log.boughtBy,
-        lastBoughtAt: log.boughtAt,
-        nextTurn: pickNextTurn(memberIds, log.boughtBy),
-      },
-    },
+  const updateData = {
+    avgIntervalDays,
+    predictedRunOutAt,
+    forecastGaps: usableGaps,
+    purchaseCount,
+    // When an item is bought, it is restocked and immediately moves back to "in stock"
+    status: 'ok',
+    lowMarkedBy: null,
+    lowMarkedAt: null,
+  };
+
+  if (unit && typeof unit === 'string' && unit.trim()) {
+    updateData.unit = unit.trim();
+  }
+
+  if (latestLog) {
+    updateData.lastBoughtBy = latestLog.boughtBy;
+    updateData.lastBoughtAt = latestLog.boughtAt;
+    updateData.nextTurn = pickNextTurn(memberIds, latestLog.boughtBy);
+  }
+
+  const updated = await Item.findByIdAndUpdate(
+    itemId,
+    { $set: updateData },
     { new: true }
   );
 

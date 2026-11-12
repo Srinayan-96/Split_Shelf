@@ -29,8 +29,16 @@ export default function ItemDetailSlideOver({
   const [price, setPrice] = useState('');
   const [date, setDate] = useState(todayInputValue());
   const [note, setNote] = useState('');
+  const [unit, setUnit] = useState('');
   const [formError, setFormError] = useState(null);
   const boughtKey = useRef(null);
+
+  // Sync unit when item data loads
+  useEffect(() => {
+    if (data?.item?.unit) {
+      setUnit(data.item.unit);
+    }
+  }, [data?.item?.unit]);
 
   const panelRef = useRef(null);
   const previouslyFocusedRef = useRef(null);
@@ -96,6 +104,7 @@ export default function ItemDetailSlideOver({
     setFormError(null);
 
     const details = { quantity: qty };
+    if (unit.trim()) details.unit = unit.trim();
     if (money.value !== null) details.pricePaise = money.value;
     if (note.trim()) details.note = note.trim();
     if (date && date !== todayInputValue()) details.boughtAt = dateInputToIso(date);
@@ -339,19 +348,28 @@ export default function ItemDetailSlideOver({
                   {formError && <div className="alert">{formError}</div>}
 
                   <form onSubmit={handleSavePurchase} noValidate>
-                    <div className="field">
-                      <label htmlFor="so-qty">
-                        Quantity {item.unit && <span className="muted">({item.unit})</span>}
-                      </label>
-                      <input
-                        id="so-qty"
-                        type="number"
-                        min="1"
-                        step="any"
-                        value={quantity}
-                        onChange={(e) => setQuantity(e.target.value)}
-                        required
-                      />
+                    <div className="panel-qty-unit-row">
+                      <div className="field">
+                        <label htmlFor="so-qty">Quantity</label>
+                        <input
+                          id="so-qty"
+                          type="number"
+                          min="1"
+                          step="any"
+                          value={quantity}
+                          onChange={(e) => setQuantity(e.target.value)}
+                          required
+                        />
+                      </div>
+                      <div className="field">
+                        <label htmlFor="so-unit">Unit</label>
+                        <input
+                          id="so-unit"
+                          placeholder="e.g. pcs, litres, kg, rolls"
+                          value={unit}
+                          onChange={(e) => setUnit(e.target.value)}
+                        />
+                      </div>
                     </div>
 
                     <div className="field">
